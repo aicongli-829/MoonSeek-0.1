@@ -1,19 +1,19 @@
 ///|
 let cli_help =
-  #|FileNest · MoonBit 本地文件整理
+  #|FileNest · local file organization in MoonBit
   #|
-  #|用法：
-  #|  moon run --target native cmd/filenest -- serve [--port 4173] [--root 文件夹]
-  #|  moon run --target native cmd/filenest -- scan <文件夹> [--config rules.json]
-  #|  moon run --target native cmd/filenest -- analyze <文件夹> [--config rules.json]
-  #|  moon run --target native cmd/filenest -- preview <文件夹> [--config rules.json | --rules rules.fnrules] [--csv]
-  #|  moon run --target native cmd/filenest -- apply <文件夹> [--config rules.json | --rules rules.fnrules] --yes
-  #|  moon run --target native cmd/filenest -- snapshot <文件夹> [--output snapshot.json]
-  #|  moon run --target native cmd/filenest -- diff <文件夹> --snapshot snapshot.json
-  #|  moon run --target native cmd/filenest -- history <文件夹>
-  #|  moon run --target native cmd/filenest -- undo <文件夹> <批次ID> --yes
+  #|Usage:
+  #|  moon run --target native cmd/filenest -- serve [--port 4173] [--root folder]
+  #|  moon run --target native cmd/filenest -- scan <folder> [--config rules.json]
+  #|  moon run --target native cmd/filenest -- analyze <folder> [--config rules.json]
+  #|  moon run --target native cmd/filenest -- preview <folder> [--config rules.json | --rules rules.fnrules] [--csv]
+  #|  moon run --target native cmd/filenest -- apply <folder> [--config rules.json | --rules rules.fnrules] --yes
+  #|  moon run --target native cmd/filenest -- snapshot <folder> [--output snapshot.json]
+  #|  moon run --target native cmd/filenest -- diff <folder> --snapshot snapshot.json
+  #|  moon run --target native cmd/filenest -- history <folder>
+  #|  moon run --target native cmd/filenest -- undo <folder> <batch-id> --yes
   #|
-  #|所有文件操作由 MoonBit Native 执行。计划先预览、不覆盖目标，并保存在 .filenest/history。
+  #|MoonBit Native performs every file operation. Plans are previewed first, targets are never overwritten, and journals are stored in .filenest/history.
 
 ///|
 fn argument_after(args : Array[String], flag : String) -> String? {

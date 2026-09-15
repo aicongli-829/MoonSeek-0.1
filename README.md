@@ -1,5 +1,7 @@
 # FileNest · 文件归巢
 
+简体中文 | [English](README.en.md)
+
 FileNest 是一个使用 MoonBit 开发的本地文件整理工具，提供分类整理、批量重命名、重复文件检查和可撤销操作。
 
 核心算法、原生文件系统适配、SHA-256、事务日志、CLI、本地 HTTP 服务和浏览器交互都使用 MoonBit。HTML/CSS 负责页面结构和样式；浏览器脚本由 MoonBit 编译生成，只保存在被 Git 忽略的 `_build` 目录。文件内容始终留在本机。
@@ -27,6 +29,7 @@ Windows 下首次使用 Native 目标时，MoonBit 可能调用已安装的 Visu
 ```sh
 git clone https://github.com/aicongli-829/FileNest.git
 cd FileNest
+moon update
 moon build webui --target js --release
 moon run --target native cmd/filenest -- serve
 ```
@@ -57,6 +60,7 @@ moon run --target native cmd/filenest -- undo "D:/Downloads" BATCH-ID --yes
 ## 开发与验证
 
 ```sh
+moon update
 moon fmt --check
 moon check --target js
 moon test --target js
