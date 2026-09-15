@@ -1,0 +1,4 @@
+{
+  "import": ["moonbitlang/core/json", "moonbitlang/core/string"],
+  "link": {"js": {"exports": ["plan_json", "natural_compare"], "format": "esm"}}
+}

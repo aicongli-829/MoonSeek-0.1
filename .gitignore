@@ -1,0 +1,11 @@
+.tools/
+_build/
+target/
+node_modules/
+.filenest/
+.scratch/
+dist/
+*.log
+.env
+.DS_Store
+Thumbs.db
