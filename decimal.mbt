@@ -2,7 +2,8 @@
 /// 32-bit MoonBit Int range remain exact. These helpers implement the small
 /// subset of non-negative decimal arithmetic required by inventory summaries.
 
-///| Validate and canonicalize an unsigned decimal value.
+///|
+/// Validate and canonicalize an unsigned decimal value.
 pub fn normalize_decimal(value : String) -> String? {
   let text = value.trim().to_owned()
   if text == "" {
@@ -15,10 +16,15 @@ pub fn normalize_decimal(value : String) -> String? {
     }
   }
   let normalized = text.trim_start(chars="0").to_owned()
-  if normalized == "" { Some("0") } else { Some(normalized) }
+  if normalized == "" {
+    Some("0")
+  } else {
+    Some(normalized)
+  }
 }
 
-///| Compare unsigned decimals without converting them to bounded integers.
+///|
+/// Compare unsigned decimals without converting them to bounded integers.
 pub fn decimal_compare(left : String, right : String) -> Int {
   let a = normalize_decimal(left).unwrap_or("0")
   let b = normalize_decimal(right).unwrap_or("0")
@@ -29,7 +35,8 @@ pub fn decimal_compare(left : String, right : String) -> Int {
   }
 }
 
-///| Add two unsigned decimal values exactly.
+///|
+/// Add two unsigned decimal values exactly.
 pub fn decimal_add(left : String, right : String) -> String {
   let a = normalize_decimal(left).unwrap_or("0")
   let b = normalize_decimal(right).unwrap_or("0")
@@ -50,7 +57,8 @@ pub fn decimal_add(left : String, right : String) -> String {
   output
 }
 
-///| Add an array of unsigned decimal values.
+///|
+/// Add an array of unsigned decimal values.
 pub fn decimal_sum(values : Array[String]) -> String {
   let mut total = "0"
   for value in values {
@@ -59,7 +67,8 @@ pub fn decimal_sum(values : Array[String]) -> String {
   total
 }
 
-///| Multiply an unsigned decimal by a small non-negative integer. This is used
+///|
+/// Multiply an unsigned decimal by a small non-negative integer. This is used
 /// for projected storage calculations and never loses precision.
 pub fn decimal_multiply_small(value : String, factor : Int) -> String? {
   if factor < 0 {
@@ -87,7 +96,8 @@ pub fn decimal_multiply_small(value : String, factor : Int) -> String? {
   Some(output)
 }
 
-///| Subtract right from left. A negative result is rejected.
+///|
+/// Subtract right from left. A negative result is rejected.
 pub fn decimal_subtract(left : String, right : String) -> String? {
   let a = normalize_decimal(left)
   let b = normalize_decimal(right)
@@ -120,7 +130,8 @@ pub fn decimal_subtract(left : String, right : String) -> String? {
   normalize_decimal(output)
 }
 
-///| Decimal percentage rounded down to a whole number. The numerator must not
+///|
+/// Decimal percentage rounded down to a whole number. The numerator must not
 /// exceed the denominator; the implementation avoids floating-point drift.
 pub fn decimal_percent_floor(numerator : String, denominator : String) -> Int? {
   let top = normalize_decimal(numerator)

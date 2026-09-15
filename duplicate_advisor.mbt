@@ -1,4 +1,5 @@
-///| Non-destructive advice for one byte-confirmed duplicate group.
+///|
+/// Non-destructive advice for one byte-confirmed duplicate group.
 pub(all) struct DuplicateAdvice {
   keeper : String
   quarantine : Array[String]
@@ -7,13 +8,16 @@ pub(all) struct DuplicateAdvice {
   reason : String
 } derive(Eq, Debug, ToJson)
 
-///| Detect common copy suffixes in Chinese and English. The score is used only
+///|
+/// Detect common copy suffixes in Chinese and English. The score is used only
 /// to choose a suggested keeper and never causes automatic deletion.
 pub fn duplicate_copy_marker_score(path : String) -> Int {
   let stem = split_extension(base_name(path)).0.to_lower()
   let mut score = 0
   for marker in ["副本", "复制", "copy", "backup", "备份"] {
-    if stem.contains(marker) { score = score + 4 }
+    if stem.contains(marker) {
+      score = score + 4
+    }
   }
   if stem.has_suffix(" (1)") || stem.has_suffix("_1") || stem.has_suffix("-1") {
     score = score + 2
@@ -24,10 +28,12 @@ pub fn duplicate_copy_marker_score(path : String) -> Int {
   score
 }
 
-///| Compare keeper candidates. Prefer a name without copy markers, then a
+///|
+/// Compare keeper candidates. Prefer a name without copy markers, then a
 /// shallower and shorter path, then natural ordering for reproducibility.
 pub fn duplicate_keeper_compare(left : FileEntry, right : FileEntry) -> Int {
-  let marker = duplicate_copy_marker_score(left.path) - duplicate_copy_marker_score(right.path)
+  let marker = duplicate_copy_marker_score(left.path) -
+    duplicate_copy_marker_score(right.path)
   if marker != 0 {
     marker
   } else {
@@ -36,13 +42,21 @@ pub fn duplicate_keeper_compare(left : FileEntry, right : FileEntry) -> Int {
       depth
     } else {
       let length = left.path.length() - right.path.length()
-      if length != 0 { length } else { natural_compare(left.path, right.path) }
+      if length != 0 {
+        length
+      } else {
+        natural_compare(left.path, right.path)
+      }
     }
   }
 }
 
-///| Explain the dominant factor behind the keeper selection.
-fn duplicate_keeper_reason(keeper : FileEntry, group : Array[FileEntry]) -> String {
+///|
+/// Explain the dominant factor behind the keeper selection.
+fn duplicate_keeper_reason(
+  keeper : FileEntry,
+  group : Array[FileEntry],
+) -> String {
   let best_marker = duplicate_copy_marker_score(keeper.path)
   if group.any(file => duplicate_copy_marker_score(file.path) > best_marker) {
     "优先保留文件名中没有“副本/备份/copy”标记的版本"
@@ -58,20 +72,28 @@ fn duplicate_keeper_reason(keeper : FileEntry, group : Array[FileEntry]) -> Stri
   }
 }
 
-///| Produce advice for every confirmed group, preserving exact byte totals.
+///|
+/// Produce advice for every confirmed group, preserving exact byte totals.
 pub fn advise_duplicate_groups(
   files : Array[FileEntry],
   groups : Array[Array[String]],
 ) -> Array[DuplicateAdvice] {
   let by_path : Map[String, FileEntry] = Map([])
-  for file in files { by_path[file.path] = file }
+  for file in files {
+    by_path[file.path] = file
+  }
   let advice = []
   for paths in groups {
     let members = []
     for item in paths {
-      match by_path.get(item) { Some(file) => members.push(file); None => () }
+      match by_path.get(item) {
+        Some(file) => members.push(file)
+        None => ()
+      }
     }
-    if members.length() < 2 { continue }
+    if members.length() < 2 {
+      continue
+    }
     members.sort_by(duplicate_keeper_compare)
     let keeper = members[0]
     let quarantine = members[1:].map(file => file.path)
@@ -80,7 +102,9 @@ pub fn advise_duplicate_groups(
       keeper: keeper.path,
       quarantine,
       size_each: size,
-      reclaimable_bytes: decimal_multiply_small(size, quarantine.length()).unwrap_or("0"),
+      reclaimable_bytes: decimal_multiply_small(size, quarantine.length()).unwrap_or(
+        "0",
+      ),
       reason: duplicate_keeper_reason(keeper, members),
     })
   }
@@ -88,10 +112,12 @@ pub fn advise_duplicate_groups(
   advice
 }
 
-///| Boundary for clients that only need duplicate suggestions.
+///|
+/// Boundary for clients that only need duplicate suggestions.
 pub fn duplicate_advice_json(input : String) -> String {
   let document = @json.parse(input) catch {
-    _ => return ({ "error": "重复建议输入不是合法 JSON" } : Json).stringify()
+    _ =>
+      return ({ "error": "重复建议输入不是合法 JSON" } : Json).stringify()
   }
   let files = decode_files(document)
   let groups = decode_groups(document, "duplicates")

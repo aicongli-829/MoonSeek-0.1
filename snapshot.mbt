@@ -1,4 +1,5 @@
-///| Portable inventory record saved by the snapshot command. Modification time
+///|
+/// Portable inventory record saved by the snapshot command. Modification time
 /// is intentionally omitted: content digests make comparisons reproducible.
 pub(all) struct SnapshotFile {
   path : String
@@ -8,7 +9,8 @@ pub(all) struct SnapshotFile {
   hash : String
 } derive(Eq, Debug, ToJson)
 
-///| One difference between a saved inventory and a current scan.
+///|
+/// One difference between a saved inventory and a current scan.
 pub(all) struct SnapshotChange {
   kind : String
   before_path : String
@@ -19,7 +21,8 @@ pub(all) struct SnapshotChange {
   reason : String
 } derive(Eq, Debug, ToJson)
 
-///| Summary of a comparison. Byte totals remain decimal strings.
+///|
+/// Summary of a comparison. Byte totals remain decimal strings.
 pub(all) struct SnapshotDiffSummary {
   added : Int
   removed : Int
@@ -31,13 +34,15 @@ pub(all) struct SnapshotDiffSummary {
   net_bytes : String
 } derive(Eq, Debug)
 
-///| Full deterministic comparison result.
+///|
+/// Full deterministic comparison result.
 pub(all) struct SnapshotDiff {
   summary : SnapshotDiffSummary
   changes : Array[SnapshotChange]
 } derive(Eq, Debug)
 
-///| Convert an adapter inventory entry into its persisted representation.
+///|
+/// Convert an adapter inventory entry into its persisted representation.
 fn snapshot_file(file : FileEntry) -> SnapshotFile {
   {
     path: file.path,
@@ -48,7 +53,8 @@ fn snapshot_file(file : FileEntry) -> SnapshotFile {
   }
 }
 
-///| Decode a snapshot file list without trusting the serialized record shape.
+///|
+/// Decode a snapshot file list without trusting the serialized record shape.
 fn decode_snapshot_files(value : Json, key : String) -> Array[SnapshotFile] {
   array_field(value, key).map(file => {
     path: text_field(file, "path", ""),
@@ -59,7 +65,8 @@ fn decode_snapshot_files(value : Json, key : String) -> Array[SnapshotFile] {
   })
 }
 
-///| Validate saved and current records before comparing them.
+///|
+/// Validate saved and current records before comparing them.
 pub fn validate_snapshot_files(files : Array[SnapshotFile]) -> Array[String] {
   let errors = []
   let paths : Map[String, Bool] = Map([])
@@ -85,12 +92,14 @@ pub fn validate_snapshot_files(files : Array[SnapshotFile]) -> Array[String] {
   errors
 }
 
-///| Stable content identity used only after exact-path comparisons are removed.
+///|
+/// Stable content identity used only after exact-path comparisons are removed.
 fn snapshot_content_key(file : SnapshotFile) -> String {
   normalize_decimal(file.size).unwrap_or("0") + ":" + file.hash.to_lower()
 }
 
-///| Change order keeps the most actionable differences first.
+///|
+/// Change order keeps the most actionable differences first.
 fn snapshot_kind_order(kind : String) -> Int {
   match kind {
     "modified" => 0
@@ -101,23 +110,36 @@ fn snapshot_kind_order(kind : String) -> Int {
   }
 }
 
-///| Sort changes independently of filesystem enumeration order.
-pub fn sort_snapshot_changes(changes : Array[SnapshotChange]) -> Array[SnapshotChange] {
+///|
+/// Sort changes independently of filesystem enumeration order.
+pub fn sort_snapshot_changes(
+  changes : Array[SnapshotChange],
+) -> Array[SnapshotChange] {
   let result = changes.copy()
   result.sort_by((left, right) => {
-    let kind_order = snapshot_kind_order(left.kind) - snapshot_kind_order(right.kind)
+    let kind_order = snapshot_kind_order(left.kind) -
+      snapshot_kind_order(right.kind)
     if kind_order != 0 {
       kind_order
     } else {
-      let left_path = if left.after_path == "" { left.before_path } else { left.after_path }
-      let right_path = if right.after_path == "" { right.before_path } else { right.after_path }
+      let left_path = if left.after_path == "" {
+        left.before_path
+      } else {
+        left.after_path
+      }
+      let right_path = if right.after_path == "" {
+        right.before_path
+      } else {
+        right.after_path
+      }
       natural_compare(left_path, right_path)
     }
   })
   result
 }
 
-///| Absolute difference between exact decimal sizes.
+///|
+/// Absolute difference between exact decimal sizes.
 fn snapshot_size_difference(left : String, right : String) -> String {
   if decimal_compare(left, right) >= 0 {
     decimal_subtract(left, right).unwrap_or("0")
@@ -126,7 +148,8 @@ fn snapshot_size_difference(left : String, right : String) -> String {
   }
 }
 
-///| Compare two inventories. Matching paths are resolved first. Remaining files
+///|
+/// Compare two inventories. Matching paths are resolved first. Remaining files
 /// with the same size and digest are paired as rename/move candidates.
 pub fn compare_snapshots(
   before : Array[SnapshotFile],
@@ -134,8 +157,12 @@ pub fn compare_snapshots(
 ) -> SnapshotDiff {
   let before_by_path : Map[String, Int] = Map([])
   let after_by_path : Map[String, Int] = Map([])
-  for index, file in before { before_by_path[file.path.to_lower()] = index }
-  for index, file in after { after_by_path[file.path.to_lower()] = index }
+  for index, file in before {
+    before_by_path[file.path.to_lower()] = index
+  }
+  for index, file in after {
+    after_by_path[file.path.to_lower()] = index
+  }
   let before_matched = Array::make(before.length(), false)
   let after_matched = Array::make(after.length(), false)
   let changes = []
@@ -153,16 +180,23 @@ pub fn compare_snapshots(
         let current = after[after_index]
         before_matched[before_index] = true
         after_matched[after_index] = true
-        if old.hash == current.hash && normalize_decimal(old.size) == normalize_decimal(current.size) {
+        if old.hash == current.hash &&
+          normalize_decimal(old.size) == normalize_decimal(current.size) {
           unchanged = unchanged + 1
         } else {
           modified = modified + 1
           let old_size = normalize_decimal(old.size).unwrap_or("0")
           let new_size = normalize_decimal(current.size).unwrap_or("0")
           if decimal_compare(new_size, old_size) >= 0 {
-            bytes_added = decimal_add(bytes_added, decimal_subtract(new_size, old_size).unwrap_or("0"))
+            bytes_added = decimal_add(
+              bytes_added,
+              decimal_subtract(new_size, old_size).unwrap_or("0"),
+            )
           } else {
-            bytes_removed = decimal_add(bytes_removed, decimal_subtract(old_size, new_size).unwrap_or("0"))
+            bytes_removed = decimal_add(
+              bytes_removed,
+              decimal_subtract(old_size, new_size).unwrap_or("0"),
+            )
           }
           changes.push({
             kind: "modified",
@@ -181,7 +215,9 @@ pub fn compare_snapshots(
   let new_content : Map[String, Array[Int]] = Map([])
   let content_order = []
   for index, file in before {
-    if before_matched[index] { continue }
+    if before_matched[index] {
+      continue
+    }
     let key = snapshot_content_key(file)
     if !old_content.contains(key) {
       old_content[key] = []
@@ -190,18 +226,32 @@ pub fn compare_snapshots(
     old_content[key].push(index)
   }
   for index, file in after {
-    if after_matched[index] { continue }
+    if after_matched[index] {
+      continue
+    }
     let key = snapshot_content_key(file)
-    if !new_content.contains(key) { new_content[key] = [] }
+    if !new_content.contains(key) {
+      new_content[key] = []
+    }
     new_content[key].push(index)
   }
   for key in content_order {
-    if !new_content.contains(key) { continue }
+    if !new_content.contains(key) {
+      continue
+    }
     let old_indices = old_content[key]
     let new_indices = new_content[key]
-    old_indices.sort_by((left, right) => natural_compare(before[left].path, before[right].path))
-    new_indices.sort_by((left, right) => natural_compare(after[left].path, after[right].path))
-    let pairs = if old_indices.length() < new_indices.length() { old_indices.length() } else { new_indices.length() }
+    old_indices.sort_by((left, right) => {
+      natural_compare(before[left].path, before[right].path)
+    })
+    new_indices.sort_by((left, right) => {
+      natural_compare(after[left].path, after[right].path)
+    })
+    let pairs = if old_indices.length() < new_indices.length() {
+      old_indices.length()
+    } else {
+      new_indices.length()
+    }
     for position = 0; position < pairs; position = position + 1 {
       let old_index = old_indices[position]
       let new_index = new_indices[position]
@@ -222,7 +272,9 @@ pub fn compare_snapshots(
     }
   }
   for index, old in before {
-    if before_matched[index] { continue }
+    if before_matched[index] {
+      continue
+    }
     let size = normalize_decimal(old.size).unwrap_or("0")
     removed = removed + 1
     bytes_removed = decimal_add(bytes_removed, size)
@@ -237,7 +289,9 @@ pub fn compare_snapshots(
     })
   }
   for index, current in after {
-    if after_matched[index] { continue }
+    if after_matched[index] {
+      continue
+    }
     let size = normalize_decimal(current.size).unwrap_or("0")
     added = added + 1
     bytes_added = decimal_add(bytes_added, size)
@@ -271,7 +325,8 @@ pub fn compare_snapshots(
   }
 }
 
-///| Serialize summary keys for JavaScript consumers.
+///|
+/// Serialize summary keys for JavaScript consumers.
 fn snapshot_summary_json(summary : SnapshotDiffSummary) -> Json {
   {
     "added": summary.added,
@@ -285,10 +340,12 @@ fn snapshot_summary_json(summary : SnapshotDiffSummary) -> Json {
   }
 }
 
-///| Save a normalized, naturally sorted snapshot document.
+///|
+/// Save a normalized, naturally sorted snapshot document.
 pub fn create_snapshot_json(input : String) -> String {
   let document = @json.parse(input) catch {
-    _ => return ({ "error": "快照输入不是合法 JSON" } : Json).stringify()
+    _ =>
+      return ({ "error": "快照输入不是合法 JSON" } : Json).stringify()
   }
   let created = text_field(document, "created", "")
   let files = decode_files(document).map(snapshot_file)
@@ -300,10 +357,12 @@ pub fn create_snapshot_json(input : String) -> String {
   ({ "schemaVersion": 1, "created": created, "files": files.to_json() } : Json).stringify()
 }
 
-///| Compare a saved snapshot document with current adapter records.
+///|
+/// Compare a saved snapshot document with current adapter records.
 pub fn compare_snapshot_json(input : String) -> String {
   let document = @json.parse(input) catch {
-    _ => return ({ "error": "快照对比输入不是合法 JSON" } : Json).stringify()
+    _ =>
+      return ({ "error": "快照对比输入不是合法 JSON" } : Json).stringify()
   }
   let snapshot = field(document, "snapshot")
   if integer_field(snapshot, "schemaVersion", 0) != 1 {
@@ -318,5 +377,9 @@ pub fn compare_snapshot_json(input : String) -> String {
     return ({ "error": errors.join("；") } : Json).stringify()
   }
   let result = compare_snapshots(before, after)
-  ({ "summary": snapshot_summary_json(result.summary), "changes": result.changes.to_json() } : Json).stringify()
+  (
+    {
+      "summary": snapshot_summary_json(result.summary),
+      "changes": result.changes.to_json(),
+    } : Json).stringify()
 }

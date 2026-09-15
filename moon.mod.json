@@ -1,9 +1,0 @@
-{
-  "name": "filenest/core",
-  "version": "0.1.0",
-  "readme": "README.md",
-  "license": "MIT",
-  "keywords": ["files", "organizer", "rename", "local-first"],
-  "description": "Deterministic file organization and rename planner for FileNest",
-  "preferred-target": "js"
-}

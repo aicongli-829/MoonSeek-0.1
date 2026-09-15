@@ -1,4 +1,5 @@
-///| Aggregated extension statistics used by CLI and API consumers.
+///|
+/// Aggregated extension statistics used by CLI and API consumers.
 pub(all) struct ExtensionStatistic {
   extension : String
   count : Int
@@ -6,7 +7,8 @@ pub(all) struct ExtensionStatistic {
   percent : Int
 } derive(Eq, Debug, ToJson)
 
-///| Aggregated built-in category statistics.
+///|
+/// Aggregated built-in category statistics.
 pub(all) struct CategoryStatistic {
   category : String
   count : Int
@@ -14,7 +16,8 @@ pub(all) struct CategoryStatistic {
   percent : Int
 } derive(Eq, Debug, ToJson)
 
-///| Top-level folder distribution helps reveal a cluttered root directory.
+///|
+/// Top-level folder distribution helps reveal a cluttered root directory.
 pub(all) struct FolderStatistic {
   folder : String
   count : Int
@@ -22,7 +25,8 @@ pub(all) struct FolderStatistic {
   percent : Int
 } derive(Eq, Debug, ToJson)
 
-///| Size bands are fixed so reports can be compared between scans.
+///|
+/// Size bands are fixed so reports can be compared between scans.
 pub(all) struct SizeBandStatistic {
   band : String
   count : Int
@@ -30,7 +34,8 @@ pub(all) struct SizeBandStatistic {
   percent : Int
 } derive(Eq, Debug, ToJson)
 
-///| Largest files are returned separately from aggregates because they are
+///|
+/// Largest files are returned separately from aggregates because they are
 /// often the quickest way to understand unexpected disk usage.
 pub(all) struct LargeFileStatistic {
   path : String
@@ -38,7 +43,8 @@ pub(all) struct LargeFileStatistic {
   category : String
 } derive(Eq, Debug, ToJson)
 
-///| Complete deterministic analysis of one inventory.
+///|
+/// Complete deterministic analysis of one inventory.
 pub(all) struct InventoryAnalysis {
   total_files : Int
   total_bytes : String
@@ -57,7 +63,8 @@ pub(all) struct InventoryAnalysis {
   recommendations : Array[String]
 } derive(Eq, Debug)
 
-///| Canonical extension label for reports. Compound archives still use their
+///|
+/// Canonical extension label for reports. Compound archives still use their
 /// final suffix because that matches scan filters and rename behavior.
 pub fn analysis_extension(name : String) -> String {
   let (_, extension) = split_extension(name)
@@ -68,7 +75,8 @@ pub fn analysis_extension(name : String) -> String {
   }
 }
 
-///| The first directory segment, or a visible label for loose root files.
+///|
+/// The first directory segment, or a visible label for loose root files.
 pub fn analysis_folder(path : String) -> String {
   match path.split_once("/") {
     Some((folder, _)) => folder.to_owned()
@@ -76,7 +84,8 @@ pub fn analysis_folder(path : String) -> String {
   }
 }
 
-///| One-based nesting level where root files are level zero.
+///|
+/// One-based nesting level where root files are level zero.
 pub fn analysis_depth(path : String) -> Int {
   let mut depth = 0
   for character in path.iter() {
@@ -87,7 +96,8 @@ pub fn analysis_depth(path : String) -> Int {
   depth
 }
 
-///| Fixed, human-readable size band selected with exact decimal comparison.
+///|
+/// Fixed, human-readable size band selected with exact decimal comparison.
 pub fn analysis_size_band(size : String) -> String {
   let normalized = normalize_decimal(size).unwrap_or("0")
   if normalized == "0" {
@@ -103,7 +113,8 @@ pub fn analysis_size_band(size : String) -> String {
   }
 }
 
-///| Increase a count and decimal-byte total without converting file sizes to
+///|
+/// Increase a count and decimal-byte total without converting file sizes to
 /// JavaScript numbers or platform-sized integers.
 fn analysis_accumulate(
   counts : Map[String, Int],
@@ -115,7 +126,8 @@ fn analysis_accumulate(
   sizes[key] = decimal_add(sizes.get(key).unwrap_or("0"), size)
 }
 
-///| Sort labels by count, byte size and natural name for stable reports.
+///|
+/// Sort labels by count, byte size and natural name for stable reports.
 fn analysis_keys(
   counts : Map[String, Int],
   sizes : Map[String, String],
@@ -128,13 +140,18 @@ fn analysis_keys(
       count_order
     } else {
       let size_order = decimal_compare(sizes[right], sizes[left])
-      if size_order != 0 { size_order } else { natural_compare(left, right) }
+      if size_order != 0 {
+        size_order
+      } else {
+        natural_compare(left, right)
+      }
     }
   })
   keys
 }
 
-///| Accumulate labels while retaining first-seen order for deterministic ties.
+///|
+/// Accumulate labels while retaining first-seen order for deterministic ties.
 fn analysis_record(
   counts : Map[String, Int],
   sizes : Map[String, String],
@@ -148,7 +165,8 @@ fn analysis_record(
   analysis_accumulate(counts, sizes, key, size)
 }
 
-///| Build extension rows with percentage of file count.
+///|
+/// Build extension rows with percentage of file count.
 fn extension_statistics(
   counts : Map[String, Int],
   sizes : Map[String, String],
@@ -159,11 +177,16 @@ fn extension_statistics(
     extension: key,
     count: counts[key],
     bytes: sizes[key],
-    percent: if total == 0 { 0 } else { counts[key] * 100 / total },
+    percent: if total == 0 {
+      0
+    } else {
+      counts[key] * 100 / total
+    },
   })
 }
 
-///| Build category rows with percentage of file count.
+///|
+/// Build category rows with percentage of file count.
 fn category_statistics(
   counts : Map[String, Int],
   sizes : Map[String, String],
@@ -174,11 +197,16 @@ fn category_statistics(
     category: key,
     count: counts[key],
     bytes: sizes[key],
-    percent: if total == 0 { 0 } else { counts[key] * 100 / total },
+    percent: if total == 0 {
+      0
+    } else {
+      counts[key] * 100 / total
+    },
   })
 }
 
-///| Build top-folder rows with percentage of file count.
+///|
+/// Build top-folder rows with percentage of file count.
 fn folder_statistics(
   counts : Map[String, Int],
   sizes : Map[String, String],
@@ -189,41 +217,64 @@ fn folder_statistics(
     folder: key,
     count: counts[key],
     bytes: sizes[key],
-    percent: if total == 0 { 0 } else { counts[key] * 100 / total },
+    percent: if total == 0 {
+      0
+    } else {
+      counts[key] * 100 / total
+    },
   })
 }
 
-///| Size bands retain their logical order instead of being sorted by count.
+///|
+/// Size bands retain their logical order instead of being sorted by count.
 fn size_band_statistics(
   counts : Map[String, Int],
   sizes : Map[String, String],
   total : Int,
 ) -> Array[SizeBandStatistic] {
-  let bands = ["空文件", "小于 1 MiB", "1–100 MiB", "100 MiB–1 GiB", "至少 1 GiB"]
+  let bands = [
+    "空文件", "小于 1 MiB", "1–100 MiB", "100 MiB–1 GiB", "至少 1 GiB",
+  ]
   bands.map(band => {
     band,
     count: counts.get(band).unwrap_or(0),
     bytes: sizes.get(band).unwrap_or("0"),
-    percent: if total == 0 { 0 } else { counts.get(band).unwrap_or(0) * 100 / total },
+    percent: if total == 0 {
+      0
+    } else {
+      counts.get(band).unwrap_or(0) * 100 / total
+    },
   })
 }
 
-///| Return at most ten largest files with natural path ordering for equal sizes.
-pub fn analysis_largest_files(files : Array[FileEntry]) -> Array[LargeFileStatistic] {
+///|
+/// Return at most ten largest files with natural path ordering for equal sizes.
+pub fn analysis_largest_files(
+  files : Array[FileEntry],
+) -> Array[LargeFileStatistic] {
   let sorted = files.copy()
   sorted.sort_by((left, right) => {
     let by_size = decimal_compare(right.size, left.size)
-    if by_size != 0 { by_size } else { natural_compare(left.path, right.path) }
+    if by_size != 0 {
+      by_size
+    } else {
+      natural_compare(left.path, right.path)
+    }
   })
   let result = []
   for index = 0; index < sorted.length() && index < 10; index = index + 1 {
     let file = sorted[index]
-    result.push({ path: file.path, size: normalize_decimal(file.size).unwrap_or("0"), category: file_category(file.name) })
+    result.push({
+      path: file.path,
+      size: normalize_decimal(file.size).unwrap_or("0"),
+      category: file_category(file.name),
+    })
   }
   result
 }
 
-///| Count all duplicate members rather than only reclaimable copies.
+///|
+/// Count all duplicate members rather than only reclaimable copies.
 pub fn analysis_duplicate_file_count(groups : Array[Array[String]]) -> Int {
   let unique : Map[String, Bool] = Map([])
   for group in groups {
@@ -234,7 +285,8 @@ pub fn analysis_duplicate_file_count(groups : Array[Array[String]]) -> Int {
   unique.length()
 }
 
-///| Generate concise actions based on observable inventory facts. Suggestions
+///|
+/// Generate concise actions based on observable inventory facts. Suggestions
 /// never mutate options and remain useful to both the web UI and CLI.
 pub fn analysis_recommendations(
   total : Int,
@@ -253,33 +305,50 @@ pub fn analysis_recommendations(
     return output
   }
   if duplicate_groups > 0 && reclaimable != "0" {
-    output.push("发现可隔离的重复副本；请逐组保留一份后再执行整理。")
+    output.push(
+      "发现可隔离的重复副本；请逐组保留一份后再执行整理。",
+    )
   }
   if root_files * 100 / total >= 60 && root_files >= 10 {
-    output.push("大部分文件直接堆在根目录，适合先按文件类型或月份分类。")
+    output.push(
+      "大部分文件直接堆在根目录，适合先按文件类型或月份分类。",
+    )
   }
   if extension_count >= 12 {
-    output.push("文件格式较分散，可为高频扩展名建立自定义分类规则。")
+    output.push(
+      "文件格式较分散，可为高频扩展名建立自定义分类规则。",
+    )
   }
   if other_count * 100 / total >= 25 {
-    output.push("“其他”类型占比较高，建议查看扩展名统计并补充自定义分类。")
+    output.push(
+      "“其他”类型占比较高，建议查看扩展名统计并补充自定义分类。",
+    )
   }
   if empty_count > 0 {
-    output.push("存在空文件，整理前可确认它们是否仍有保留价值。")
+    output.push(
+      "存在空文件，整理前可确认它们是否仍有保留价值。",
+    )
   }
   if deepest >= 6 {
-    output.push("目录层级较深，批量重命名时请关注完整目标路径。")
+    output.push(
+      "目录层级较深，批量重命名时请关注完整目标路径。",
+    )
   }
   if hidden > 0 {
-    output.push("扫描包含隐藏文件；执行前请确认这些文件也需要整理。")
+    output.push(
+      "扫描包含隐藏文件；执行前请确认这些文件也需要整理。",
+    )
   }
   if output.length() == 0 {
-    output.push("当前文件分布较整齐，可从预览中选择需要的命名规则。")
+    output.push(
+      "当前文件分布较整齐，可从预览中选择需要的命名规则。",
+    )
   }
   output
 }
 
-///| Analyze inventory metadata and confirmed duplicate groups without any I/O.
+///|
+/// Analyze inventory metadata and confirmed duplicate groups without any I/O.
 pub fn analyze_inventory(
   files : Array[FileEntry],
   duplicate_groups : Array[Array[String]],
@@ -306,14 +375,24 @@ pub fn analyze_inventory(
     let category = file_category(file.name)
     let folder = analysis_folder(file.path)
     let band = analysis_size_band(size)
-    analysis_record(extension_counts, extension_sizes, extension_order, extension, size)
-    analysis_record(category_counts, category_sizes, category_order, category, size)
+    analysis_record(
+      extension_counts, extension_sizes, extension_order, extension, size,
+    )
+    analysis_record(
+      category_counts, category_sizes, category_order, category, size,
+    )
     analysis_record(folder_counts, folder_sizes, folder_order, folder, size)
     analysis_accumulate(band_counts, band_sizes, band, size)
     let depth = analysis_depth(file.path)
-    if depth == 0 { root_files = root_files + 1 }
-    if depth > deepest { deepest = depth }
-    if file.name.has_prefix(".") { hidden = hidden + 1 }
+    if depth == 0 {
+      root_files = root_files + 1
+    }
+    if depth > deepest {
+      deepest = depth
+    }
+    if file.name.has_prefix(".") {
+      hidden = hidden + 1
+    }
   }
   let total = files.length()
   let reclaimable = duplicate_reclaimable_bytes(files, duplicate_groups)
@@ -328,8 +407,12 @@ pub fn analyze_inventory(
     root_files,
     deepest_level: deepest,
     hidden_files: hidden,
-    extensions: extension_statistics(extension_counts, extension_sizes, extension_order, total),
-    categories: category_statistics(category_counts, category_sizes, category_order, total),
+    extensions: extension_statistics(
+      extension_counts, extension_sizes, extension_order, total,
+    ),
+    categories: category_statistics(
+      category_counts, category_sizes, category_order, total,
+    ),
     folders: folder_statistics(folder_counts, folder_sizes, folder_order, total),
     size_bands: size_band_statistics(band_counts, band_sizes, total),
     largest_files: analysis_largest_files(files),
@@ -348,7 +431,8 @@ pub fn analyze_inventory(
   }
 }
 
-///| Camel-case JSON contract consumed by Node and suitable for saved reports.
+///|
+/// Camel-case JSON contract consumed by Node and suitable for saved reports.
 fn inventory_analysis_json(analysis : InventoryAnalysis) -> Json {
   {
     "schemaVersion": 1,
@@ -370,18 +454,23 @@ fn inventory_analysis_json(analysis : InventoryAnalysis) -> Json {
   }
 }
 
-///| JavaScript boundary for inventory analysis.
+///|
+/// JavaScript boundary for inventory analysis.
 pub fn analyze_inventory_json(input : String) -> String {
   let document = @json.parse(input) catch {
-    _ => return ({ "error": "分析输入不是合法 JSON" } : Json).stringify()
+    _ =>
+      return ({ "error": "分析输入不是合法 JSON" } : Json).stringify()
   }
   let files = decode_files(document)
   if files.length() > 10000 {
     return ({ "error": "每次最多分析 10,000 个文件" } : Json).stringify()
   }
   for file in files {
-    if file.path == "" || file.name == "" || normalize_decimal(file.size) is None {
-      return ({ "error": "文件清单包含无效路径、名称或大小" } : Json).stringify()
+    if file.path == "" ||
+      file.name == "" ||
+      normalize_decimal(file.size) is None {
+      return (
+        { "error": "文件清单包含无效路径、名称或大小" } : Json).stringify()
     }
   }
   let duplicates = decode_groups(document, "duplicates")

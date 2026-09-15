@@ -1,4 +1,5 @@
-///| Split on the final extension. A leading dot alone is not an extension.
+///|
+/// Split on the final extension. A leading dot alone is not an extension.
 pub fn split_extension(name : String) -> (String, String) {
   let mut dot = -1
   for i = 1; i < name.length(); i = i + 1 {
@@ -31,10 +32,15 @@ pub fn base_name(value : String) -> String {
 
 ///|
 pub fn join_path(folder : String, name : String) -> String {
-  if folder == "" { name } else { folder + "/" + name }
+  if folder == "" {
+    name
+  } else {
+    folder + "/" + name
+  }
 }
 
-///| Portable filename diagnostics, including Windows device names.
+///|
+/// Portable filename diagnostics, including Windows device names.
 pub fn filename_error(name : String) -> String? {
   if name == "" || name == "." || name == ".." {
     return Some("文件名不能为空或为 .、..")
@@ -52,9 +58,9 @@ pub fn filename_error(name : String) -> String? {
   }
   let stem = name.split(".").to_array()[0].to_owned().to_upper()
   let reserved = [
-    "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5",
-    "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5",
-    "LPT6", "LPT7", "LPT8", "LPT9",
+    "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
+    "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8",
+    "LPT9",
   ]
   if reserved.contains(stem) {
     return Some("Windows 保留设备名")
@@ -75,14 +81,17 @@ pub fn path_error(value : String) -> String? {
     if filename_error(piece) is Some(error) {
       return Some(error)
     }
-    if [".git", ".filenest", "node_modules", ".tools", "_build", "target"].contains(piece.to_lower()) {
+    if [".git", ".filenest", "node_modules", ".tools", "_build", "target"].contains(
+        piece.to_lower(),
+      ) {
       return Some("不能写入保留目录")
     }
   }
   None
 }
 
-///| Suffix before the final extension; used only for conflict resolution.
+///|
+/// Suffix before the final extension; used only for conflict resolution.
 pub fn numbered_path(value : String, number : Int) -> String {
   let (stem, ext) = split_extension(base_name(value))
   join_path(parent_path(value), stem + " (" + number.to_string() + ")" + ext)

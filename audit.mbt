@@ -1,4 +1,5 @@
-///| Summary used by the UI, CLI and exported diagnostics.
+///|
+/// Summary used by the UI, CLI and exported diagnostics.
 pub(all) struct PlanSummary {
   ready : Int
   conflict : Int
@@ -10,7 +11,8 @@ pub(all) struct PlanSummary {
   duplicate_bytes : String
 } derive(Eq, Debug)
 
-///| Decode the filesystem adapter's inventory without trusting object shape.
+///|
+/// Decode the filesystem adapter's inventory without trusting object shape.
 fn decode_files(value : Json) -> Array[FileEntry] {
   array_field(value, "files").map(file => {
     path: text_field(file, "path", ""),
@@ -21,18 +23,25 @@ fn decode_files(value : Json) -> Array[FileEntry] {
   })
 }
 
-///| Decode nested arrays of relative paths.
+///|
+/// Decode nested arrays of relative paths.
 fn decode_groups(value : Json, key : String) -> Array[Array[String]] {
-  array_field(value, key).map(group => match group {
-    Array(items) => items.map(item => match item {
-      String(text) => text
-      _ => ""
-    })
-    _ => []
+  array_field(value, key).map(group => {
+    match group {
+      Array(items) =>
+        items.map(item => {
+          match item {
+            String(text) => text
+            _ => ""
+          }
+        })
+      _ => []
+    }
   })
 }
 
-///| Verify that every selection was produced by this exact inventory. This is
+///|
+/// Verify that every selection was produced by this exact inventory. This is
 /// deliberately repeated inside MoonBit even though the UI only offers known
 /// checkboxes: CLI and HTTP callers are untrusted.
 pub fn validate_selections(
@@ -67,14 +76,16 @@ pub fn validate_selections(
     }
   }
   for group in duplicate_groups {
-    if group.length() > 0 && group.all(item => options.quarantine.contains(item)) {
+    if group.length() > 0 &&
+      group.all(item => options.quarantine.contains(item)) {
       errors.push("每组重复文件必须保留至少一份")
     }
   }
   errors
 }
 
-///| Detect a target whose parent segment is an existing file or link. The
+///|
+/// Detect a target whose parent segment is an existing file or link. The
 /// planner checks complete target collisions; this audit covers intermediate
 /// path components using facts collected by the OS adapter.
 pub fn audit_parent_paths(
@@ -110,7 +121,8 @@ pub fn audit_parent_paths(
   })
 }
 
-///| Potential duplicate bytes are all members after one keeper per confirmed
+///|
+/// Potential duplicate bytes are all members after one keeper per confirmed
 /// group. Decimal strings keep totals exact for large archives.
 pub fn duplicate_reclaimable_bytes(
   files : Array[FileEntry],
@@ -129,7 +141,8 @@ pub fn duplicate_reclaimable_bytes(
   total
 }
 
-///| Count every plan state and attach duplicate statistics.
+///|
+/// Count every plan state and attach duplicate statistics.
 pub fn summarize_plan(
   rows : Array[PlanRow],
   files : Array[FileEntry],
@@ -162,7 +175,8 @@ pub fn summarize_plan(
   }
 }
 
-///| Serialize summary keys using the camelCase contract consumed by the web UI.
+///|
+/// Serialize summary keys using the camelCase contract consumed by the web UI.
 fn summary_json(summary : PlanSummary) -> Json {
   {
     "ready": summary.ready,
@@ -176,7 +190,8 @@ fn summary_json(summary : PlanSummary) -> Json {
   }
 }
 
-///| MoonBit-first planning boundary. It owns selection validation, deterministic
+///|
+/// MoonBit-first planning boundary. It owns selection validation, deterministic
 /// planning, parent-path auditing and summary calculation in one pure call.
 pub fn plan_bundle_json(input : String) -> String {
   let document = @json.parse(input) catch {
@@ -195,8 +210,5 @@ pub fn plan_bundle_json(input : String) -> String {
   let initial = plan(files, occupied, options)
   let rows = audit_parent_paths(initial, occupied, directories)
   let summary = summarize_plan(rows, files, duplicates)
-  ({
-    "rows": rows.to_json(),
-    "summary": summary_json(summary),
-  } : Json).stringify()
+  ({ "rows": rows.to_json(), "summary": summary_json(summary) } : Json).stringify()
 }

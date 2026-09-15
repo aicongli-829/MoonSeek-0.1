@@ -1,4 +1,5 @@
-///| A file inventory item supplied by the operating-system adapter.
+///|
+/// A file inventory item supplied by the operating-system adapter.
 pub(all) struct FileEntry {
   path : String
   name : String
@@ -7,21 +8,24 @@ pub(all) struct FileEntry {
   hash : String
 } derive(Eq, Debug, ToJson)
 
-///| Ordered, portable naming operation. Values are validated before execution.
+///|
+/// Ordered, portable naming operation. Values are validated before execution.
 pub(all) struct RenameRule {
   kind : String
   value : String
   replacement : String
 } derive(Eq, Debug, ToJson)
 
-///| First matching custom category wins.
+///|
+/// First matching custom category wins.
 pub(all) struct CategoryRule {
   kind : String
   value : String
   folder : String
 } derive(Eq, Debug, ToJson)
 
-///| All paths in a plan are relative to one selected root.
+///|
+/// All paths in a plan are relative to one selected root.
 pub(all) struct PlanRow {
   source : String
   target : String
@@ -30,7 +34,8 @@ pub(all) struct PlanRow {
   category : String
 } derive(Eq, Debug, ToJson)
 
-///| Planning options are independent of the clock and filesystem.
+///|
+/// Planning options are independent of the clock and filesystem.
 pub(all) struct Options {
   classify : String
   conflict : String
@@ -84,9 +89,11 @@ fn array_field(value : Json, key : String) -> Array[Json] {
 
 ///|
 fn strings_field(value : Json, key : String) -> Array[String] {
-  array_field(value, key).map(x => match x {
-    String(text) => text
-    _ => ""
+  array_field(value, key).map(x => {
+    match x {
+      String(text) => text
+      _ => ""
+    }
   })
 }
 
@@ -122,7 +129,8 @@ fn decode_options(value : Json) -> Options {
   }
 }
 
-///| JSON boundary used by both CLI and local HTTP adapter.
+///|
+/// JSON boundary used by both CLI and local HTTP adapter.
 /// Never performs filesystem operations and never returns an executable plan
 /// when the incoming JSON cannot be decoded.
 pub fn plan_json(input : String) -> String {

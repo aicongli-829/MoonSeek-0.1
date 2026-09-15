@@ -1,11 +1,14 @@
-///| Candidate duplicate groups are identified by exact byte length and a
+///|
+/// Candidate duplicate groups are identified by exact byte length and a
 /// cryptographic digest supplied by the host. The host still performs a final
 /// byte-for-byte comparison before presenting any group to the user.
 pub fn duplicate_candidates(files : Array[FileEntry]) -> Array[Array[String]] {
   let buckets : Map[String, Array[String]] = Map([])
   let order = []
   for file in files {
-    if file.path == "" || file.hash == "" || normalize_decimal(file.size) is None {
+    if file.path == "" ||
+      file.hash == "" ||
+      normalize_decimal(file.size) is None {
       continue
     }
     let key = normalize_decimal(file.size).unwrap() + ":" + file.hash.to_lower()
@@ -25,9 +28,12 @@ pub fn duplicate_candidates(files : Array[FileEntry]) -> Array[Array[String]] {
   output
 }
 
-///| Stable group ordering makes CLI output and reports reproducible even when
+///|
+/// Stable group ordering makes CLI output and reports reproducible even when
 /// the operating system returns directory entries in a different order.
-pub fn sort_duplicate_groups(groups : Array[Array[String]]) -> Array[Array[String]] {
+pub fn sort_duplicate_groups(
+  groups : Array[Array[String]],
+) -> Array[Array[String]] {
   let result = groups.map(group => {
     let copy = group.copy()
     copy.sort_by(natural_compare)
@@ -47,7 +53,8 @@ pub fn sort_duplicate_groups(groups : Array[Array[String]]) -> Array[Array[Strin
   result
 }
 
-///| Validate candidate groups before the host spends time reading their bytes.
+///|
+/// Validate candidate groups before the host spends time reading their bytes.
 pub fn validate_candidate_groups(
   files : Array[FileEntry],
   groups : Array[Array[String]],
@@ -79,22 +86,24 @@ pub fn validate_candidate_groups(
       seen[item] = true
       match by_path.get(item) {
         None => errors.push("重复候选文件不在清单中：" + item)
-        Some(current) => {
-          if normalize_decimal(current.size) != normalize_decimal(first.unwrap().size) ||
+        Some(current) =>
+          if normalize_decimal(current.size) !=
+            normalize_decimal(first.unwrap().size) ||
             current.hash.to_lower() != first.unwrap().hash.to_lower() {
             errors.push("重复候选组的大小或摘要不一致")
           }
-        }
       }
     }
   }
   errors
 }
 
-///| JavaScript boundary for the first phase of duplicate detection.
+///|
+/// JavaScript boundary for the first phase of duplicate detection.
 pub fn duplicate_candidates_json(input : String) -> String {
   let document = @json.parse(input) catch {
-    _ => return ({ "error": "重复检查输入不是合法 JSON" } : Json).stringify()
+    _ =>
+      return ({ "error": "重复检查输入不是合法 JSON" } : Json).stringify()
   }
   let files = decode_files(document)
   if files.length() > 10000 {

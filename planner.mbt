@@ -1,4 +1,5 @@
-///| Build a deterministic preview. Existing paths include unselected files and
+///|
+/// Build a deterministic preview. Existing paths include unselected files and
 /// directories so exclusion can never implicitly authorize an overwrite.
 pub fn plan(
   files : Array[FileEntry],
@@ -13,7 +14,11 @@ pub fn plan(
       "size" => decimal_compare(a.size, b.size)
       _ => natural_compare(a.name, b.name)
     }
-    if primary == 0 { natural_compare(a.path, b.path) } else { primary }
+    if primary == 0 {
+      natural_compare(a.path, b.path)
+    } else {
+      primary
+    }
   })
   let used : Map[String, Bool] = Map([])
   for item in occupied {
@@ -24,13 +29,30 @@ pub fn plan(
   for file in sorted {
     let category = file_category(file.name)
     if options.excluded.contains(file.path) {
-      output.push({ source: file.path, target: file.path, status: "excluded", reason: "手动排除", category })
+      output.push({
+        source: file.path,
+        target: file.path,
+        status: "excluded",
+        reason: "手动排除",
+        category,
+      })
       continue
     }
-    let name = rename_file(file.name, options.rules, sequence, options.sequence_width)
+    let name = rename_file(
+      file.name,
+      options.rules,
+      sequence,
+      options.sequence_width,
+    )
     sequence = sequence + 1
     if filename_error(name) is Some(error) {
-      output.push({ source: file.path, target: file.path, status: "invalid", reason: error, category })
+      output.push({
+        source: file.path,
+        target: file.path,
+        status: "invalid",
+        reason: error,
+        category,
+      })
       continue
     }
     let folder = destination_folder(file, options)
@@ -41,24 +63,42 @@ pub fn plan(
       join_path(folder, name)
     }
     if is_duplicate {
-      let has_keeper = files.any(other =>
+      let has_keeper = files.any(other => {
         other.path != file.path &&
         other.hash != "" &&
         other.hash == file.hash &&
         other.size == file.size &&
-        !options.quarantine.contains(other.path),
-      )
+        !options.quarantine.contains(other.path)
+      })
       if !has_keeper {
-        output.push({ source: file.path, target, status: "invalid", reason: "每组重复文件必须保留至少一份", category })
+        output.push({
+          source: file.path,
+          target,
+          status: "invalid",
+          reason: "每组重复文件必须保留至少一份",
+          category,
+        })
         continue
       }
     }
     if path_error(target) is Some(error) {
-      output.push({ source: file.path, target, status: "invalid", reason: error, category })
+      output.push({
+        source: file.path,
+        target,
+        status: "invalid",
+        reason: error,
+        category,
+      })
       continue
     }
     if target == file.path {
-      output.push({ source: file.path, target, status: "unchanged", reason: "无需改变", category })
+      output.push({
+        source: file.path,
+        target,
+        status: "unchanged",
+        reason: "无需改变",
+        category,
+      })
       continue
     }
     if used.contains(target.to_lower()) {
@@ -70,12 +110,24 @@ pub fn plan(
           n = n + 1
         }
       } else {
-        output.push({ source: file.path, target, status: "conflict", reason: "目标名称已存在或与其他操作重复", category })
+        output.push({
+          source: file.path,
+          target,
+          status: "conflict",
+          reason: "目标名称已存在或与其他操作重复",
+          category,
+        })
         continue
       }
     }
     if path_error(target) is Some(error) {
-      output.push({ source: file.path, target, status: "invalid", reason: error, category })
+      output.push({
+        source: file.path,
+        target,
+        status: "invalid",
+        reason: error,
+        category,
+      })
       continue
     }
     used[target.to_lower()] = true
@@ -83,7 +135,11 @@ pub fn plan(
       source: file.path,
       target,
       status: "ready",
-      reason: if is_duplicate { "隔离重复副本，可撤销" } else { "分类 / 重命名" },
+      reason: if is_duplicate {
+        "隔离重复副本，可撤销"
+      } else {
+        "分类 / 重命名"
+      },
       category,
     })
   }

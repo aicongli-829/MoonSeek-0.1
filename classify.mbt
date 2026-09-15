@@ -1,4 +1,5 @@
-///| Human-readable default categories; filenames are matched case-insensitively.
+///|
+/// Human-readable default categories; filenames are matched case-insensitively.
 pub fn file_category(name : String) -> String {
   let (_, ext) = split_extension(name)
   let suffix = ext.to_lower()
@@ -8,13 +9,17 @@ pub fn file_category(name : String) -> String {
     "表格"
   } else if [".ppt", ".pptx", ".odp", ".key"].contains(suffix) {
     "演示文稿"
-  } else if [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".heic", ".tif"].contains(suffix) {
+  } else if [
+      ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".heic", ".tif",
+    ].contains(suffix) {
     "图片"
   } else if [".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"].contains(suffix) {
     "视频"
   } else if [".mp3", ".wav", ".flac", ".m4a", ".ogg", ".aac"].contains(suffix) {
     "音频"
-  } else if [".zip", ".7z", ".rar", ".tar", ".gz", ".bz2", ".xz"].contains(suffix) {
+  } else if [".zip", ".7z", ".rar", ".tar", ".gz", ".bz2", ".xz"].contains(
+      suffix,
+    ) {
     "压缩包"
   } else if [".exe", ".msi", ".dmg", ".pkg", ".deb", ".apk"].contains(suffix) {
     "安装包"

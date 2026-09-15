@@ -15,17 +15,17 @@
         <span>FileNest<small>文件归巢</small></span>
       </a>
       <div class="nav-caption">我的工作台</div>
-      <nav aria-label="主导航">
-        <button class="nav-item active" data-view="organize"><span>▦</span>分类与改名</button>
-        <button class="nav-item" data-view="duplicates"><span>▱</span>重复文件<span class="badge" id="duplicate-count">0</span></button>
-        <button class="nav-item" data-view="history"><span>↶</span>操作历史</button>
-        <button class="nav-item" data-view="templates"><span>◇</span>规则模板</button>
+      <nav id="sidebar-nav" aria-label="主导航">
+        <button class="nav-item active" data-action="view" data-index="organize"><span>▦</span>分类与改名</button>
+        <button class="nav-item" data-action="view" data-index="duplicates"><span>▱</span>重复文件<span class="badge" id="duplicate-count">0</span></button>
+        <button class="nav-item" data-action="view" data-index="history"><span>↶</span>操作历史</button>
+        <button class="nav-item" data-action="view" data-index="templates"><span>◇</span>规则模板</button>
       </nav>
       <div class="sidebar-note">
         <span class="status-dot"></span> 本地工作模式
         <p>文件留在你的电脑。<br>每一次整理，都有迹可循。</p>
       </div>
-      <div class="sidebar-footer">MoonBit powered · v0.1.0</div>
+      <div class="sidebar-footer">MoonBit powered · v0.2.0</div>
     </aside>
 
     <main>

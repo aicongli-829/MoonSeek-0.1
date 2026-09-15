@@ -1,4 +1,5 @@
-///| Digit-aware comparison without parsing unbounded digit runs as integers.
+///|
+/// Digit-aware comparison without parsing unbounded digit runs as integers.
 /// Ties are broken by original spelling for deterministic plans.
 pub fn natural_compare(left : String, right : String) -> Int {
   let a = left.to_lower()
@@ -52,16 +53,21 @@ pub fn padded_number(number : Int, width : Int) -> String {
   output
 }
 
-///| Collapse whitespace rather than deleting word boundaries.
+///|
+/// Collapse whitespace rather than deleting word boundaries.
 pub fn normalize_spaces(value : String) -> String {
   let output = StringBuilder()
   let mut pending = false
   let mut started = false
   for ch in value.iter() {
     if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '　' {
-      if started { pending = true }
+      if started {
+        pending = true
+      }
     } else {
-      if pending { output.write_string(" ") }
+      if pending {
+        output.write_string(" ")
+      }
       output.write_char(ch)
       pending = false
       started = true
@@ -70,7 +76,8 @@ pub fn normalize_spaces(value : String) -> String {
   output.to_string()
 }
 
-///| Naming rules operate on the stem; extension changes require an explicit rule.
+///|
+/// Naming rules operate on the stem; extension changes require an explicit rule.
 pub fn rename_file(
   name : String,
   rules : Array[RenameRule],
@@ -84,23 +91,23 @@ pub fn rename_file(
     match rule.kind {
       "prefix" => stem = rule.value + stem
       "suffix" => stem = stem + rule.value
-      "replace" => {
+      "replace" =>
         if rule.value != "" {
           stem = stem.replace_all(old=rule.value, new=rule.replacement)
         }
-      }
-      "remove" => {
+      "remove" =>
         if rule.value != "" {
           stem = stem.replace_all(old=rule.value, new="")
         }
-      }
       "lower" => stem = stem.to_lower()
       "upper" => stem = stem.to_upper()
       "spaces" => stem = normalize_spaces(stem)
-      "separator" => stem = normalize_spaces(stem).replace_all(old=" ", new=rule.value)
+      "separator" =>
+        stem = normalize_spaces(stem).replace_all(old=" ", new=rule.value)
       "extension_lower" => ext = ext.to_lower()
       "number" => stem = rule.value + padded_number(sequence, width)
-      "number_suffix" => stem = stem + rule.value + padded_number(sequence, width)
+      "number_suffix" =>
+        stem = stem + rule.value + padded_number(sequence, width)
       "regex" => {
         let re = @string.Regex(rule.value) catch { _ => continue }
         stem = re.replace_by(stem, _ => rule.replacement[:]).to_owned()
@@ -114,7 +121,9 @@ pub fn rename_file(
 ///|
 pub fn validate_options(options : Options) -> Array[String] {
   let errors = []
-  if !["none", "type", "month", "type_month", "custom"].contains(options.classify) {
+  if !["none", "type", "month", "type_month", "custom"].contains(
+      options.classify,
+    ) {
     errors.push("未知分类方式")
   }
   if !["skip", "number"].contains(options.conflict) {
@@ -134,18 +143,16 @@ pub fn validate_options(options : Options) -> Array[String] {
   }
   for rule in options.rules {
     if ![
-      "prefix", "suffix", "replace", "remove", "lower", "upper", "spaces",
-      "separator", "extension_lower", "number", "number_suffix", "regex",
-    ].contains(rule.kind) {
+        "prefix", "suffix", "replace", "remove", "lower", "upper", "spaces", "separator",
+        "extension_lower", "number", "number_suffix", "regex",
+      ].contains(rule.kind) {
       errors.push("未知命名规则：" + rule.kind)
     }
     if ["replace", "remove", "regex"].contains(rule.kind) && rule.value == "" {
       errors.push("查找内容不能为空")
     }
     if rule.kind == "regex" {
-      try {
-        @string.Regex(rule.value) |> ignore
-      } catch {
+      try @string.Regex(rule.value) |> ignore catch {
         _ => errors.push("正则表达式不合法：" + rule.value)
       }
     }

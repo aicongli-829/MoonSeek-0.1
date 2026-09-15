@@ -12,18 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
       - name: Install official MoonBit toolchain
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moon.sh
           bash /tmp/install-moon.sh
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-      - name: Check and build MoonBit core
-        run: npm run check
-      - name: Run filesystem and HTTP tests
-        run: npm test
+      - name: Check JavaScript target and core tests
+        run: |
+          moon fmt --check
+          moon check --target js
+          moon test --target js
+          moon build webui --target js --release
+      - name: Check Native target and tests
+        run: |
+          moon check --target native
+          moon test --target native
+          moon build cmd/filenest --target native --release
       - name: Verify source-size target
-        run: node scripts/count-lines.mjs --require-4000
-
+        run: |
+          lines=$(git ls-files '*.mbt' | xargs cat | wc -l)
+          echo "Tracked MoonBit lines: $lines"
+          test "$lines" -ge 4000
