@@ -2,7 +2,7 @@
 
 FileNest 是一个本地文件整理工具，提供分类整理、批量重命名、重复文件检查和可撤销操作。
 
-MoonBit 实现确定性的分类、命名、自然排序、路径诊断和计划生成；Node.js 提供本机文件访问与事务日志；浏览器提供中文操作界面。文件内容只在本机处理，不上传云端。
+MoonBit 实现分类、命名、自然排序、路径诊断、计划生成、重复分组、报告、分析、快照对比、规则解析和事务状态机；Node.js 提供本机文件访问、内容核验与原子日志写入；浏览器提供中文操作界面。文件内容只在本机处理，不上传云端。
 
 > 当前版本为 0.1.0 黑客松首版。建议先用自带的合成样例体验，再处理真实文件。
 
@@ -15,7 +15,10 @@ MoonBit 实现确定性的分类、命名、自然排序、路径诊断和计划
 - **历史和恢复**：逐步保存操作记录；支持批次撤销，以及中途停止后的恢复。
 - **筛选和模板**：扩展名筛选、排除目录、递归开关、内置模板和自定义模板。
 - **报告导出**：CSV、JSON 和 Markdown 格式的整理预览。
+- **空间分析**：统计扩展名、分类、顶层目录、大小区间、最大文件和重复空间，并逐组建议保留的重复文件。
+- **快照对比**：保存轻量文件清单，再次扫描时识别新增、删除、修改和移动的文件。
 - **图形界面和 CLI**：普通用户可以使用浏览器界面，也可以在脚本中调用命令行。
+- **可读规则文件**：`.fnrules` 支持注释、引号、扫描范围、分类和重命名流水线，并提供精确到行的错误信息。
 
 ## 快速开始
 
@@ -62,7 +65,11 @@ npm run demo
 ```sh
 node host/cli.mjs --help
 node host/cli.mjs scan "D:/Downloads"
+node host/cli.mjs analyze "D:/Downloads"
+node host/cli.mjs snapshot "D:/Downloads" --output before.json
+node host/cli.mjs diff "D:/Downloads" --snapshot before.json
 node host/cli.mjs preview "D:/Downloads" --config examples/downloads.json
+node host/cli.mjs preview "D:/Downloads" --rules examples/downloads.fnrules
 node host/cli.mjs apply "D:/Downloads" --config examples/downloads.json --yes
 node host/cli.mjs history "D:/Downloads"
 node host/cli.mjs undo "D:/Downloads" BATCH-ID --yes
@@ -85,10 +92,10 @@ node scripts/count-lines.mjs --require-4000
 ## 项目结构
 
 ```text
-model.mbt / paths.mbt / naming.mbt / classify.mbt / planner.mbt
-  MoonBit 核心库，无文件系统副作用
+*.mbt
+  MoonBit 核心库：计划、报告、分析、快照、规则、配置和事务决策，无文件系统副作用
 host/
-  扫描、事务日志、恢复、本地 HTTP 服务和 CLI
+  文件系统与加密摘要适配、事务日志、本地 HTTP 服务和 CLI
 web/
   无框架中文界面
 tests/ + planner_test.mbt

@@ -1,4 +1,4 @@
 {
   "import": ["moonbitlang/core/json", "moonbitlang/core/string"],
-  "link": {"js": {"exports": ["plan_json", "natural_compare"], "format": "esm"}}
+  "link": {"js": {"exports": ["plan_json", "plan_bundle_json", "natural_compare", "report_json", "duplicate_candidates_json", "transaction_prepare_json", "transaction_undo_plan_json", "transaction_phase_json", "analyze_inventory_json", "create_snapshot_json", "compare_snapshot_json", "parse_rules_json", "validate_options_json", "validate_template_json", "configuration_defaults_json", "duplicate_advice_json"], "format": "esm"}}
 }

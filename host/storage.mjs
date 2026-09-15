@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { duplicate_candidates_json } from '../dist/core.mjs';
 
 export const stateName = '.filenest';
 const blocked = new Set(['.git', '.filenest', 'node_modules', '.tools', '_build', 'target']);
@@ -74,12 +75,13 @@ export async function scan(root, options = {}) {
     }
   }
   await walk(root);
-  const groups = new Map();
-  for (const file of files) { const k = file.size + ':' + file.hash; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(file); }
+  const candidateResult = JSON.parse(duplicate_candidates_json(JSON.stringify({ files })));
+  if (candidateResult.error) throw new Error(candidateResult.error);
+  const byPath = new Map(files.map(file => [file.path, file]));
   // Hash narrows candidates; byte comparison confirms equality before offering cleanup.
   const duplicates = [];
-  for (const group of groups.values()) {
-    if (group.length < 2) continue;
+  for (const paths of candidateResult.groups) {
+    const group = paths.map(item => byPath.get(item));
     const clusters = [];
     for (const file of group) {
       let found;

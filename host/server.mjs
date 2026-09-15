@@ -4,10 +4,12 @@ import path from 'node:path';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { rootPath, scan } from './storage.mjs';
-import { createPlan, exportCsv, exportMarkdown } from './planning.mjs';
+import { createPlan, exportCsv, exportJson, exportMarkdown } from './planning.mjs';
 import { execute, undo, history } from './transactions.mjs';
 import { builtInTemplates, validateOptions } from './options.mjs';
 import { listTemplates, saveTemplate, deleteTemplate } from './templates.mjs';
+import { analyzeInventory } from './analysis.mjs';
+import { createSnapshot, compareSnapshot } from './snapshot.mjs';
 
 const publicDir = fileURLToPath(new URL('../web/', import.meta.url));
 const assets = new Map([
@@ -156,6 +158,23 @@ export function createServer({ initialRoot = '', port = 4173 } = {}) {
           preview = createPlan(inventory, options);
           return json(res, preview);
         }
+        case '/api/analyze': {
+          idle();
+          if (!inventory) {
+            throw new Error('请先扫描文件夹');
+          }
+          return json(res, analyzeInventory(inventory));
+        }
+        case '/api/snapshot': {
+          idle();
+          if (!inventory) throw new Error('请先扫描文件夹');
+          return json(res, createSnapshot(inventory));
+        }
+        case '/api/diff': {
+          idle();
+          if (!inventory) throw new Error('请先扫描文件夹');
+          return json(res, compareSnapshot(input.snapshot, inventory));
+        }
         case '/api/execute': {
           idle();
           requireRoot();
@@ -223,7 +242,7 @@ export function createServer({ initialRoot = '', port = 4173 } = {}) {
             ? exportCsv(preview)
             : format === 'md'
               ? exportMarkdown(preview)
-              : JSON.stringify(preview, null, 2);
+              : exportJson(preview);
           return json(res, { content, filename: `filenest-preview.${format}` });
         }
         default:

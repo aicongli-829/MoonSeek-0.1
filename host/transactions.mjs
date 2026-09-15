@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { safePath, stateDir, atomicJson, fingerprint, stateName } from './storage.mjs';
+import { transaction_prepare_json, transaction_undo_plan_json, transaction_phase_json } from '../dist/core.mjs';
 
 const validId = id => typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id);
 const journalQueues = new Map();
@@ -19,6 +20,14 @@ async function withJournalAccess(root, task) {
   }
 }
 async function exists(p) { try { await fs.lstat(p); return true; } catch(e) { if(e.code === 'ENOENT') return false; throw e; } }
+function moonResult(fn, input) {
+  const result = JSON.parse(fn(JSON.stringify(input)));
+  if (result.error) throw new Error(result.error);
+  return result;
+}
+function nextPhase(phase, event) {
+  return moonResult(transaction_phase_json, { phase, event }).phase;
+}
 async function verify(file, expected) {
   const now = await fingerprint(file);
   if (now.sha256 !== expected.sha256 || now.size !== expected.size || now.mtimeMs !== expected.mtimeMs) throw new Error('文件已改变，请重新扫描或人工检查');
@@ -79,21 +88,21 @@ export async function execute(root, plan, scanned, { onProgress = () => {}, shou
   const release = await lock(root);
   try {
     const previous = await history(root);
-    if (previous.some(j => ['running','interrupted','undoing','undo-failed'].includes(j.status))) throw new Error('有未完成批次，请先在操作历史中恢复');
     const id = randomUUID();
     const byPath = new Map(scanned.map(f => [f.path, f]));
-    const active = plan.filter(p => p.status === 'ready');
-    if (!active.length) throw new Error('没有可执行的操作');
-    const sources = new Set(), targets = new Set();
-    const operations = [];
-    for (const row of active) {
-      if (!byPath.has(row.source)) throw new Error('文件不在当前扫描中');
-      if (row.source === row.target) continue;
+    const prepared = moonResult(transaction_prepare_json, {
+      id,
+      plan,
+      scanned: scanned.map(file => file.path),
+      historyStatuses: previous.map(journal => journal.status),
+    });
+    const operations = prepared.operations.map(operation => ({
+      ...operation,
+      fingerprint: byPath.get(operation.source).fingerprint,
+    }));
+    for (const row of operations) {
       await safePath(root, row.source, { missing: false });
       await safePath(root, row.target); // User plans cannot address internal state.
-      if (sources.has(row.source.toLowerCase()) || targets.has(row.target.toLowerCase())) throw new Error('计划包含重复源或目标');
-      sources.add(row.source.toLowerCase()); targets.add(row.target.toLowerCase());
-      operations.push({ source: row.source, target: row.target, stage: `${stateName}/stage/${id}/${operations.length}`, fingerprint: byPath.get(row.source).fingerprint, phase: 'pending' });
     }
     for (const op of operations) {
       await verify(path.join(root, op.source), op.fingerprint);
@@ -105,14 +114,14 @@ export async function execute(root, plan, scanned, { onProgress = () => {}, shou
       for (const op of operations) {
         if (shouldStop()) throw new Error('用户停止了后续操作，可在历史中恢复原状');
         await move(root, op.source, op.stage, op.fingerprint);
-        op.phase = 'staged'; await save(root, journal);
+        op.phase = nextPhase(op.phase, 'stage'); await save(root, journal);
         onProgress({ phase: 'staging', completed: operations.filter(o => o.phase === 'staged').length, total: operations.length });
       }
       for (const op of operations) {
         if (shouldStop()) throw new Error('用户停止了后续操作，可在历史中恢复原状');
-        op.phase = 'applying'; await save(root, journal);
+        op.phase = nextPhase(op.phase, 'apply-start'); await save(root, journal);
         await move(root, op.stage, op.target, op.fingerprint);
-        op.phase = 'done'; await save(root, journal);
+        op.phase = nextPhase(op.phase, 'apply-finish'); await save(root, journal);
         onProgress({ phase: 'applying', completed: operations.filter(o => o.phase === 'done').length, total: operations.length });
       }
       journal.status = 'completed'; await save(root, journal);
@@ -128,6 +137,7 @@ async function readJournal(root, id) {
     return JSON.parse(await fs.readFile(file, 'utf8'));
   });
   if (j.id !== id || !Array.isArray(j.operations)) throw new Error('操作记录损坏');
+  moonResult(transaction_undo_plan_json, j);
   for (let i = 0; i < j.operations.length; i++) {
     const o = j.operations[i];
     await safePath(root, o.source); await safePath(root, o.target);
@@ -157,36 +167,39 @@ export async function undo(root, id) {
     if (j.status === 'undone') return j;
     // Reconcile moves performed just before an unexpected process exit.
     for (const op of j.operations) {
-      if (op.phase === 'pending' && await reconcilePair(root, op.source, op.stage, op.fingerprint)) op.phase = 'staged';
+      if (op.phase === 'pending' && await reconcilePair(root, op.source, op.stage, op.fingerprint)) op.phase = nextPhase(op.phase, 'reconcile-moved');
       if (op.phase === 'applying') {
-        if (await reconcilePair(root, op.stage, op.target, op.fingerprint)) op.phase = 'done';
-        else op.phase = 'staged';
+        const moved = await reconcilePair(root, op.stage, op.target, op.fingerprint);
+        op.phase = nextPhase(op.phase, moved ? 'reconcile-moved' : 'reconcile-stationary');
       }
       if (op.phase === 'undo-staging') {
-        if (await reconcilePair(root, op.target, op.stage, op.fingerprint)) op.phase = 'restaging';
-        else op.phase = 'done';
+        const moved = await reconcilePair(root, op.target, op.stage, op.fingerprint);
+        op.phase = nextPhase(op.phase, moved ? 'reconcile-moved' : 'reconcile-stationary');
       }
-      if (op.phase === 'restoring' && await reconcilePair(root, op.stage, op.source, op.fingerprint)) op.phase = 'restored';
+      if (op.phase === 'restoring' && await reconcilePair(root, op.stage, op.source, op.fingerprint)) op.phase = nextPhase(op.phase, 'reconcile-moved');
     }
     // Check all content and original destinations before changing anything.
-    const targetPaths = new Set(j.operations.filter(o => o.phase === 'done').map(o => o.target));
-    for (const op of j.operations) {
-      if (['pending','restored'].includes(op.phase)) continue;
-      const current = op.phase === 'done' ? op.target : op.stage;
+    const undoPlan = moonResult(transaction_undo_plan_json, j);
+    const targetPaths = new Set(undoPlan.targets);
+    for (let position = 0; position < undoPlan.validate.length; position++) {
+      const op = j.operations[undoPlan.validate[position]];
+      const current = undoPlan.locations[position];
       await verify(await safePath(root, current, { internal: true, missing: false }), op.fingerprint);
       if (await exists(path.join(root, op.source)) && !targetPaths.has(op.source)) throw new Error(`原位置已被占用：${op.source}`);
     }
     j.status = 'undoing'; j.error = null; await save(root, j);
     try {
-      for (const op of j.operations) if (op.phase === 'done') {
-        op.phase = 'undo-staging'; await save(root, j);
+      for (const index of undoPlan.restage) {
+        const op = j.operations[index];
+        op.phase = nextPhase(op.phase, 'undo-stage-start'); await save(root, j);
         await move(root, op.target, op.stage, op.fingerprint);
-        op.phase = 'restaging'; await save(root, j);
+        op.phase = nextPhase(op.phase, 'undo-stage-finish'); await save(root, j);
       }
-      for (const op of j.operations) if (['staged','restaging','restoring'].includes(op.phase)) {
-        op.phase = 'restoring'; await save(root, j);
+      for (const index of undoPlan.restore) {
+        const op = j.operations[index];
+        op.phase = nextPhase(op.phase, 'restore-start'); await save(root, j);
         await move(root, op.stage, op.source, op.fingerprint);
-        op.phase = 'restored'; await save(root, j);
+        op.phase = nextPhase(op.phase, 'restore-finish'); await save(root, j);
       }
       j.status = 'undone'; j.undoneAt = new Date().toISOString(); await save(root, j);
     } catch(e) { j.status = 'undo-failed'; j.error = e.message; await save(root, j); }

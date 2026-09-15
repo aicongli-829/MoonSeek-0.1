@@ -92,8 +92,11 @@ fn strings_field(value : Json, key : String) -> Array[String] {
 
 ///|
 fn integer_field(value : Json, key : String, fallback : Int) -> Int {
-  let text = text_field(value, key, fallback.to_string())
-  @string.parse_int(text) catch { _ => fallback }
+  match field(value, key) {
+    Number(number, ..) => number.to_int()
+    String(text) => @string.parse_int(text) catch { _ => fallback }
+    _ => fallback
+  }
 }
 
 ///|
@@ -126,7 +129,7 @@ pub fn plan_json(input : String) -> String {
   let document = @json.parse(input) catch {
     _ => return ({ "error": "输入不是合法 JSON" } : Json).stringify()
   }
-  let files = array_field(document, "files").map(file => {
+  let files : Array[FileEntry] = array_field(document, "files").map(file => {
     path: text_field(file, "path", ""),
     name: text_field(file, "name", ""),
     month: text_field(file, "month", ""),

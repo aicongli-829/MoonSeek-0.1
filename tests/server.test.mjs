@@ -64,6 +64,24 @@ test('HTTP flow scans, previews, executes and undoes actual files', async t => {
   assert.equal(await read(root, 'hello.txt'), 'hello');
 });
 
+test('HTTP analysis and snapshot diff use the current scanned inventory', async t => {
+  const root = await fixture(t, { 'a.txt': 'before' });
+  const client = await app(t);
+  let started = await client.post('scan', { root });
+  await client.finish(started.value.id);
+  const analysis = await client.post('analyze');
+  assert.equal(analysis.value.totalFiles, 1);
+  const snapshot = await client.post('snapshot');
+  assert.equal(snapshot.value.schemaVersion, 1);
+  await fs.rename(path.join(root, 'a.txt'), path.join(root, 'renamed.txt'));
+  await fs.writeFile(path.join(root, 'new.txt'), 'new');
+  started = await client.post('scan', { root });
+  await client.finish(started.value.id);
+  const comparison = await client.post('diff', { snapshot: snapshot.value });
+  assert.equal(comparison.value.summary.moved, 1);
+  assert.equal(comparison.value.summary.added, 1);
+});
+
 test('API requires per-process token', async t => {
   const client = await app(t);
   const result = await client.post('history', {}, { 'X-FileNest-Token': 'wrong' });
@@ -134,6 +152,11 @@ test('exported plans are reports and do not move files', async t => {
     assert.equal(result.status, 200);
     assert.ok(result.value.content.includes('a.txt'));
   }
+  const jsonReport = await client.post('export', { planId: preview.value.id, format: 'json' });
+  const savedPlan = JSON.parse(jsonReport.value.content);
+  assert.equal(savedPlan.id, preview.value.id);
+  assert.deepEqual(savedPlan.options, preview.value.options);
+  assert.deepEqual(savedPlan.summary, preview.value.summary);
   assert.equal(await read(root, 'a.txt'), 'a');
 });
 

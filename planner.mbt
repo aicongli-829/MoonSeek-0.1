@@ -10,7 +10,7 @@ pub fn plan(
     let primary = match options.sort {
       "path" => natural_compare(a.path, b.path)
       "month" => a.month.compare(b.month)
-      "size" => natural_compare(a.size, b.size)
+      "size" => decimal_compare(a.size, b.size)
       _ => natural_compare(a.name, b.name)
     }
     if primary == 0 { natural_compare(a.path, b.path) } else { primary }
