@@ -195,6 +195,9 @@ async function doScan() {
   renderDuplicates();
   await loadTemplates();
   await doPreview();
+  if (!$('view-history').hidden) {
+    await loadHistory();
+  }
   notify(`扫描完成，找到 ${inventory.files.length} 个文件。还没有移动或改名任何文件。`);
 }
 
@@ -344,9 +347,7 @@ async function loadHistory() {
     header.append(title);
     if (!['undone', 'unreadable'].includes(record.status)) {
       header.append(button('恢复原状', guarded(async () => {
-        if (!window.confirm('将检查并恢复这个批次的文件。确定继续？')) {
-          return;
-        }
+        if (!await confirmUndo(record)) return;
         const started = await api('undo', { id: record.id });
         const result = await pollJob(started.id, '恢复');
         inventory = null;
@@ -367,6 +368,26 @@ async function loadHistory() {
     card.append(details);
     container.append(card);
   }
+}
+
+function confirmUndo(record) {
+  $('undo-description').textContent = `这次将恢复 ${record.operations.length} 个文件。`;
+  $('undo-dialog').showModal();
+  return new Promise(resolve => {
+    const finish = result => {
+      $('undo-dialog').close();
+      $('cancel-undo').onclick = null;
+      $('confirm-undo').onclick = null;
+      $('undo-dialog').oncancel = null;
+      resolve(result);
+    };
+    $('cancel-undo').onclick = () => finish(false);
+    $('confirm-undo').onclick = () => finish(true);
+    $('undo-dialog').oncancel = event => {
+      event.preventDefault();
+      finish(false);
+    };
+  });
 }
 
 function renderTemplates() {

@@ -185,6 +185,12 @@
       <p class="muted">冲突文件会跳过。完成后可以在操作历史中撤销。</p>
       <div class="dialog-actions"><button id="cancel-execute" class="secondary">再看看</button><button id="confirm-execute" class="primary">确认执行</button></div>
     </dialog>
+    <dialog id="undo-dialog">
+      <h2>恢复这次整理？</h2>
+      <p id="undo-description"></p>
+      <p class="muted">恢复前会检查文件内容和原位置，不会覆盖后来新增或改动的文件。</p>
+      <div class="dialog-actions"><button id="cancel-undo" class="secondary">取消</button><button id="confirm-undo" class="primary">确认恢复</button></div>
+    </dialog>
     <dialog id="template-dialog">
       <h2>保存这套整理规则</h2>
       <label for="template-name">模板名称</label>

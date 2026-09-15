@@ -8,6 +8,7 @@ import {
   safePath,
   fingerprint,
   relativeSafe,
+  atomicJson,
 } from '../host/storage.mjs';
 import { fixture } from './helpers.mjs';
 
@@ -145,4 +146,28 @@ test('fingerprints include content and modification time', async t => {
   assert.equal(first.size, second.size);
   assert.notEqual(first.sha256, second.sha256);
   assert.equal(typeof second.mtimeMs, 'number');
+});
+
+test('atomic JSON replacement remains valid with concurrent readers', async t => {
+  const root = await fixture(t);
+  const file = path.join(root, 'journal.json');
+  await atomicJson(file, { revision: 0, values: [] });
+  let reading = true;
+  const readers = Array.from({ length: 2 }, async () => {
+    while (reading) {
+      const value = JSON.parse(await fs.readFile(file, 'utf8'));
+      assert.equal(typeof value.revision, 'number');
+      await new Promise(resolve => setImmediate(resolve));
+    }
+  });
+  try {
+    for (let revision = 1; revision <= 8; revision++) {
+      await atomicJson(file, { revision, values: Array(revision % 7).fill(revision) });
+    }
+  } finally {
+    reading = false;
+    await Promise.all(readers);
+  }
+  assert.equal(JSON.parse(await fs.readFile(file, 'utf8')).revision, 8);
+  assert.deepEqual((await fs.readdir(root)).filter(name => name.endsWith('.tmp')), []);
 });

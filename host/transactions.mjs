@@ -4,14 +4,30 @@ import { randomUUID } from 'node:crypto';
 import { safePath, stateDir, atomicJson, fingerprint, stateName } from './storage.mjs';
 
 const validId = id => typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id);
+const journalQueues = new Map();
+async function withJournalAccess(root, task) {
+  const key = path.resolve(root).toLowerCase();
+  const previous = journalQueues.get(key) || Promise.resolve();
+  let release;
+  const current = new Promise(resolve => { release = resolve; });
+  journalQueues.set(key, current);
+  await previous.catch(() => {});
+  try { return await task(); }
+  finally {
+    release();
+    if (journalQueues.get(key) === current) journalQueues.delete(key);
+  }
+}
 async function exists(p) { try { await fs.lstat(p); return true; } catch(e) { if(e.code === 'ENOENT') return false; throw e; } }
 async function verify(file, expected) {
   const now = await fingerprint(file);
   if (now.sha256 !== expected.sha256 || now.size !== expected.size || now.mtimeMs !== expected.mtimeMs) throw new Error('文件已改变，请重新扫描或人工检查');
 }
 async function save(root, journal) {
-  const file = await safePath(root, `${stateName}/history/${journal.id}.json`, { internal: true });
-  await atomicJson(file, journal);
+  await withJournalAccess(root, async () => {
+    const file = await safePath(root, `${stateName}/history/${journal.id}.json`, { internal: true });
+    await atomicJson(file, journal);
+  });
 }
 async function lock(root) {
   const dir = await stateDir(root), file = path.join(dir, 'lock');
@@ -45,16 +61,18 @@ async function move(root, from, to, expected) {
   await fs.unlink(src);
 }
 export async function history(root) {
-  const dir = await stateDir(root);
-  const records = [];
-  for (const name of await fs.readdir(path.join(dir, 'history'))) {
-    if (!/^[a-f0-9-]{36}\.json$/.test(name)) continue;
-    try {
-      await safePath(root, `${stateName}/history/${name}`, { internal: true, missing: false });
-      records.push(JSON.parse(await fs.readFile(path.join(dir, 'history', name), 'utf8')));
-    } catch(e) { records.push({ id: name, status: 'unreadable', error: e.message, operations: [] }); }
-  }
-  return records.sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+  return withJournalAccess(root, async () => {
+    const dir = await stateDir(root);
+    const records = [];
+    for (const name of await fs.readdir(path.join(dir, 'history'))) {
+      if (!/^[a-f0-9-]{36}\.json$/.test(name)) continue;
+      try {
+        await safePath(root, `${stateName}/history/${name}`, { internal: true, missing: false });
+        records.push(JSON.parse(await fs.readFile(path.join(dir, 'history', name), 'utf8')));
+      } catch(e) { records.push({ id: name, status: 'unreadable', error: e.message, operations: [] }); }
+    }
+    return records.sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+  });
 }
 
 export async function execute(root, plan, scanned, { onProgress = () => {}, shouldStop = () => false } = {}) {
@@ -105,8 +123,10 @@ export async function execute(root, plan, scanned, { onProgress = () => {}, shou
 
 async function readJournal(root, id) {
   if (!validId(id)) throw new Error('批次编号不合法');
-  const file = await safePath(root, `${stateName}/history/${id}.json`, { internal: true, missing: false });
-  const j = JSON.parse(await fs.readFile(file, 'utf8'));
+  const j = await withJournalAccess(root, async () => {
+    const file = await safePath(root, `${stateName}/history/${id}.json`, { internal: true, missing: false });
+    return JSON.parse(await fs.readFile(file, 'utf8'));
+  });
   if (j.id !== id || !Array.isArray(j.operations)) throw new Error('操作记录损坏');
   for (let i = 0; i < j.operations.length; i++) {
     const o = j.operations[i];

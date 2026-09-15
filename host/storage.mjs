@@ -106,7 +106,26 @@ export async function atomicJson(file, data) {
   const temp = file + '.' + randomUUID() + '.tmp';
   const handle = await fs.open(temp, 'wx');
   try { await handle.writeFile(JSON.stringify(data, null, 2)); await handle.sync(); } finally { await handle.close(); }
-  await fs.rename(temp, file);
+  // Antivirus/indexing processes and concurrent history readers can briefly
+  // hold the destination on Windows. Retrying the atomic replacement keeps the
+  // previous journal intact until the new, synced file can take its place.
+  let replaced = false, lastError;
+  try {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      try {
+        await fs.rename(temp, file);
+        replaced = true;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (!['EACCES', 'EBUSY', 'EPERM'].includes(error.code)) throw error;
+        await new Promise(resolve => setTimeout(resolve, 10 * (attempt + 1)));
+      }
+    }
+    if (!replaced) throw lastError;
+  } finally {
+    if (!replaced) await fs.rm(temp, { force: true }).catch(() => {});
+  }
 }
 export async function stateDir(root) {
   const dir = await safePath(root, stateName, { internal: true });
