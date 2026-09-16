@@ -1,0 +1,65 @@
+name: Bug report
+description: Report incorrect planning, scanning, execution, or interface behavior
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve FileNest. Use synthetic files and remove private paths or journal content.
+  - type: input
+    id: version
+    attributes:
+      label: FileNest commit or version
+      placeholder: e.g. 0.2.0 or a commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, MoonBit version, and interface used
+      placeholder: Windows 11, MoonBit 0.x, native CLI
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Scan and duplicate detection
+        - Classification and renaming
+        - Preview and conflict handling
+        - Apply, history, or undo
+        - Browser workspace
+        - CLI or reports
+        - Build and documentation
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Describe the synthetic directory, rule file, command, and steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed private files, access tokens, personal paths, and real `.filenest` journals.
+          required: true
