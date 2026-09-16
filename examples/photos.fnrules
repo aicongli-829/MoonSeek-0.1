@@ -1,0 +1,14 @@
+# Photo archive: group by modification month and append stable numbering.
+scan recursive on
+scan hidden off
+scan extensions "jpg,jpeg,png,heic,webp,dng,raw"
+scan exclude "已整理"
+scan exclude "备份"
+
+classify month
+conflict number
+sort month
+sequence start 1 width 4
+
+rename extension_lower
+rename number_suffix "_"
