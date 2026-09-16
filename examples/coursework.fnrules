@@ -1,0 +1,18 @@
+# Coursework: prioritize keywords, then group remaining files by extension.
+scan recursive on
+scan hidden off
+scan extensions "pdf,doc,docx,ppt,pptx,xls,xlsx,txt,md"
+scan exclude "已归档"
+
+classify custom
+category keyword "作业" "作业"
+category keyword "考试" "考试资料"
+category extension "ppt,pptx" "课件"
+category extension "pdf,doc,docx,txt,md" "讲义"
+category extension "xls,xlsx" "表格"
+
+conflict number
+sort name
+rename remove "副本"
+rename spaces
+rename extension_lower
