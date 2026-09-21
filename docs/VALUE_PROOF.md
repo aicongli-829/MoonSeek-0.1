@@ -1,63 +1,44 @@
-# FileNest 必要性与价值证明
+# MoonMigrate necessity and value
 
-## 项目定位
+## The repeated problem
 
-FileNest Core 是一个使用 MoonBit 实现的**安全文件批处理与可恢复事务引擎**；“文件归巢”浏览器工作台和 CLI 是该引擎的完整示范应用。
+Applications evolve more than executable code. New releases relocate settings, split data directories, rename cache keys, seed new resources, and retire incompatible indexes. Teams frequently implement these changes as one-off shell or application-startup scripts.
 
-引擎接收文件清单和规则，生成确定性的路径变换计划，在执行前诊断冲突；执行时采用两阶段暂存、文件指纹复核和逐步日志，支持批次审计与撤销。它解决的核心问题不是某一种文件分类方式，而是各种工具在批量移动或重命名文件时都会遇到的安全问题。
+Those scripts are deceptively risky because they run against state the developer does not control. A user may skip releases, edit a configuration file, restore only part of a backup, or already have a path that the new version wants. A process can stop after step three of six. Without a version route, preconditions, a journal, and reverse actions, the next launch cannot reliably distinguish old, new, and partially migrated state.
 
-## 为什么有必要
+## Reusable contribution
 
-MoonBit 官方 `moonbitlang/async/fs` 提供文件读写、遍历、重命名和锁等底层能力，但上层项目仍需自行处理以下问题：
+MoonMigrate turns that repeated application concern into MoonBit infrastructure:
 
-1. 多个目标重名、父路径占用以及已有文件禁止覆盖；
-2. `A → B、B → A` 等交换或循环改名；
-3. 预览后源文件发生变化造成的检查与执行时序风险；
-4. 批量操作中途失败后的状态记录、审计和恢复；
-5. 同一批规则在 CLI、浏览器或自动化流程中的确定性复用。
+| Layer | Contribution |
+|---|---|
+| Deterministic core | Manifest decoding, path rules, version-chain validation, target routing, flattened plans |
+| Native preflight | Real file kinds, occupancy, UTF-8 text conditions, optional SHA-256 checks |
+| Executor | Non-overwriting operations, lock, backups, quarantine, per-step phases |
+| Recovery | Installed-version state, interrupted-journal detection, reverse rollback |
+| Interface | Native CLI plus JSON API for installers and MoonBit applications |
 
-如果每个代码生成器、素材流水线、数据集预处理工具和工作区迁移工具都重复实现这些机制，容易出现覆盖、部分成功和无法恢复的问题。FileNest 将这些能力集中为可测试的 MoonBit 核心与 Native 执行层，补充底层文件系统 API 与最终应用之间的空白。
+The same mechanism applies to desktop software, plugins, local services, CLI caches, indexes, project templates, and asset pipelines. It is independent of any one folder taxonomy or UI.
 
-## 可复用边界
+## Executable evidence
 
-| 层次 | 提供能力 | 可复用场景 |
-| --- | --- | --- |
-| `filenest/core` | 路径校验、自然排序、规则组合、冲突诊断、确定性计划、快照比较、事务状态机 | CLI、Web、IDE 插件、代码生成和迁移工具 |
-| `filenest/core/native` | 扫描、SHA-256、逐字节重复确认、两阶段移动、同步日志、撤销 | 素材流水线、数据预处理、项目归档、批量路径重构 |
-| CLI / `.fnrules` | 可审查计划、机器可读报告、可版本控制规则 | 本地脚本和 CI 自动化 |
-| FileNest Web | 面向普通用户的可视化示范应用 | 下载目录、照片、课程资料和办公文件 |
+The Native integration test creates an isolated application directory and executes:
 
-当前引擎只执行移动与重命名，不提供永久删除；突然断电后的日志可用于审计和恢复，但不宣称数据库级强事务。这些边界在架构文档中明确说明。
+1. a versioned directory creation;
+2. a legacy-file move;
+3. a binary copy;
+4. a new version marker write;
+5. an existing configuration replacement with backup;
+6. obsolete-file quarantine.
 
-## 已有价值证明
+It verifies version 1, then rolls the batch back and checks that original contents and locations are restored and created files are gone. Core tests separately cover broken chains, non-boundary targets, unsafe paths, and deterministic plan output.
 
-- **实际实现：** 36 个 MoonBit 源码及测试文件、6825 行 MoonBit 代码；仓库不跟踪手写 JavaScript。
-- **可验证性：** JavaScript 目标 64 项测试、Native 目标 68 项测试；原生集成测试使用真实临时文件验证扫描、重复确认、三文件移动和整批撤销。
-- **完整交付：** 纯 MoonBit 核心库、Native 执行层、9 个 CLI 命令、本地 HTTP 服务、MoonBit 浏览器工作台、规则语言、模板和 GitHub Actions。
-- **安全性质：** 拒绝路径穿越和符号链接；目标存在时不覆盖；执行与撤销前复核大小、修改时间和 SHA-256；批次锁避免并发执行。
+Run the evidence with:
 
-## 合成数据验证
+```sh
+moon test --target native
+```
 
-2026-09-21 在 Windows x64、20 逻辑处理器、MoonBit `0.1.20260904` 环境进行一次可重复的本地验证：
+## Scope boundary
 
-- 12 个子目录，共 1200 个文件；
-- 900 个内容不同的文本文件；
-- 30 组重复内容，每组 10 个副本；
-- 总数据量 263025 字节。
-
-Release 构建扫描耗时 801 ms，正确返回 1200 个文件、30 组重复内容和 0 条警告；扫描并生成 1200 行整理计划耗时 830 ms，识别可隔离重复空间 147474 字节，目标冲突为 0。该数据只用于证明完整流程能够处理千文件规模并得到可核验结果，不作为不同机器上的统一性能承诺。
-
-## 本期交付目标
-
-1. 固化规划、事务和撤销的公共 API 与使用文档；
-2. 增加代码仓库路径重构、素材归档和数据集整理示例；
-3. 完成 Windows 与 Linux 的真实文件端到端验证；
-4. 发布可供其他 MoonBit 项目调用的 Mooncakes 模块；
-5. 保留 FileNest Web 作为对核心能力的可视化验收入口。
-
-## 参考
-
-- MoonBit 异步文件系统：<https://mooncakes.io/docs/moonbitlang/async/fs>
-- 工程架构：[ARCHITECTURE.md](ARCHITECTURE.md)
-- 依赖与生态查重：[PROVENANCE.md](PROVENANCE.md)
-- 测试与复现：[TESTING.md](TESTING.md)
+MoonMigrate is not a database migration engine and does not interpret application schemas. It supplies the filesystem transition layer on which an application-specific migrator can depend. Current format version 1 is linear and file-oriented; branched histories, structured document transforms, and database coordination remain future work.

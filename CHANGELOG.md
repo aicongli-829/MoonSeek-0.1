@@ -1,6 +1,19 @@
 # Changelog
 
-All notable FileNest changes are recorded here. The project follows [Semantic Versioning](https://semver.org/) after the first public release.
+All notable MoonMigrate changes are recorded here. The project follows [Semantic Versioning](https://semver.org/) after the first public release.
+
+## [0.3.0] - 2026-09-21
+
+### Added
+
+- Versioned filesystem migration manifests and contiguous-chain planning.
+- Native dry-run, six reversible operation types, version state, and journals.
+- Dedicated `moonmigrate` executable, manifest guide, ecosystem comparison, and integration test.
+
+### Changed
+
+- Repositioned the project around reusable application-data migrations.
+- Retained FileNest as a visual example of the shared transaction infrastructure.
 
 ## Unreleased
 

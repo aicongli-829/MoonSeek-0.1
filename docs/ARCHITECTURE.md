@@ -1,53 +1,61 @@
-# FileNest 工程设计
+# MoonMigrate architecture
 
-## 数据流
+## Migration data flow
 
-1. MoonBit Native 解析并校验用户选择的根目录。
-2. 扫描器记录普通文件的相对路径、大小、修改时间和 SHA-256；链接与保留目录不会进入计划。
-3. 大小与摘要相同的候选文件再逐字节比较，形成确认过的重复组。
-4. 确定性核心验证规则、父目录占用和重复选择，生成整理计划与统计摘要。
-5. 浏览器或 CLI 展示同一份计划。只有带预览 ID 的已确认请求可以执行。
-6. Native 事务层重新验证全部源文件，将它们移入本批次暂存区，再移至目标；每一步都同步更新日志。
-7. 撤销先验证现有文件，再把目标重新暂存，最后恢复原路径。
+1. The core decodes a manifest and validates identifiers, operations, paths, hashes, and version ranges.
+2. The planner reads the installed version and resolves one contiguous route to the requested target.
+3. The Native adapter checks the real filesystem without changing it and produces an action preview.
+4. Apply acquires a root-local lock and persists every action as `pending` before execution.
+5. Each action moves through `running` to `done`, with an atomic journal update at each boundary.
+6. The installed version advances only after every action completes.
+7. Rollback visits recorded actions in reverse order, restores backups and quarantined files, then restores the old version.
 
-## 包边界
+## Package boundaries
 
-根包 `filenest/core` 不访问文件系统、时钟或网络，负责分类、命名、自然排序、路径诊断、计划审计、报告、分析、快照、规则解析、配置校验和事务状态决策。
+- `moonmigrate/core` is deterministic and portable. `migration.mbt` owns manifest types, validation, version routing, and the JSON API. The package also retains FileNest planning algorithms as reusable transaction infrastructure.
+- `moonmigrate/core/native` owns filesystem inspection, locking, SHA-256, state, journals, backup paths, execution, and rollback.
+- `cmd/moonmigrate` is the primary Native executable.
+- `cmd/filenest` and `webui` are legacy demonstration clients for the shared safe-file primitives.
 
-`filenest/core/native` 只支持 Native 目标，使用 `moonbitlang/async` 实现文件系统和 HTTP。它还包含独立 SHA-256、Windows FILETIME 换算、CLI、日志和两阶段文件移动。
+## State layout
 
-`filenest/core/webui` 只支持 JS 目标。页面状态、规则数组、HTML 渲染、重复选择、预览、导出和历史操作都用 MoonBit 编写。`dom.mbt` 中的窄 FFI 只映射 DOM、Fetch、下载和确认框等浏览器原语。
+```text
+.moonmigrate/
+  state.json                 installed project and version
+  lock                       exclusive apply/rollback lock
+  history/<batch>.json       action phases and rollback metadata
+  backups/<batch>/<step>     original write/replace files
+  quarantine/<batch>/...     obsolete files retained for rollback
+```
 
-## 不覆盖事务
+Manifest paths cannot enter this directory. Journal records omit manifest text payloads; only the paths, hashes, phases, and rollback locations are persisted.
+
+## Safety invariants
+
+- All user paths are portable relative paths under one resolved root.
+- Existing symbolic links and directory junctions are rejected during traversal.
+- Move and copy destinations use create-new or `rename(..., replace=false)` behavior.
+- Optional SHA-256 checks run immediately before the batch is accepted.
+- A project identity in `state.json` prevents a different manifest from taking over the same root.
+- A running or failed journal blocks a later apply until it is rolled back.
+- A completed batch can only roll back when its target is still the installed version.
+
+MoonMigrate records interruption points and supports rollback from a `running` journal. It does not claim database-grade atomicity across arbitrary filesystem and power failures.
+
+## Legacy two-stage transaction engine
+
+FileNest batch renames use a separate `.filenest` state directory and two non-overwriting rename passes:
 
 ```text
 pending → staged → applying → done
 done → undo-staging → undo-staged → restoring → restored
 ```
 
-- 所有源先移到 `.filenest/stage/<batch>/<index>`，因此名称交换与循环移动不会互相覆盖。
-- 每次移动使用 `@fs.rename(source, target, replace=false)`；目标存在时底层直接失败。
-- 移动前后都核对大小、修改时间与 SHA-256。
-- 日志写入唯一临时文件并同步，然后原子替换历史 JSON。
-- 批次锁阻止同一根目录同时执行两个事务。
+This path remains covered by regression tests and demonstrates cyclic rename handling. It is separate from the ordered migration-step executor.
 
-操作失败时不会继续后续步骤，已完成步骤及阶段保留在历史记录中，可执行撤销。日志提供进程崩溃后的人工审计依据；当前实现不宣称突然断电下的完整数据库级持久性。
+## Verification
 
-## 本地 HTTP 边界
-
-- 仅绑定 `127.0.0.1`。
-- 固定白名单提供 HTML、CSS 和 MoonBit 编译产物。
-- POST 请求校验精确 Host、同源 Origin、`Sec-Fetch-Site` 和启动时随机令牌。
-- 请求体限制为 2 MiB，静态响应设置 CSP 和 `nosniff`。
-- 浏览器只接收文件元数据、计划和日志；文件内容不会通过 HTTP 返回。
-
-## 构建产物
-
-仓库只跟踪 MoonBit、HTML、CSS、配置和文档。浏览器 JS 位于 `_build/js/release/build/webui/webui.js`，由 `moon build webui --target js --release` 生成并由 Native 服务读取。
-
-## 验证层次
-
-- 核心测试：排序性质、规则组合、命名边界、冲突、报告、精确大小、事务阶段、分析、快照和 `.fnrules`。
-- Native 测试：SHA-256 标准向量、跨平台路径和 FILETIME 月份换算。
-- 原生冒烟：真实临时文件扫描、重复确认、计划、三文件执行、日志和整批撤销。
-- HTTP 冒烟：会话、首页和 MoonBit 编译脚本返回 200。
+- Core tests cover version routing, gap and boundary diagnostics, step validation, and JSON plans.
+- Native tests cover SHA-256, path rules, filesystem scanning, and platform time conversion.
+- The migration integration test applies all six operation types to real files, checks version state, and rolls the entire batch back.
+- Legacy FileNest integration tests continue to cover scan, duplicate confirmation, two-stage apply, and undo.

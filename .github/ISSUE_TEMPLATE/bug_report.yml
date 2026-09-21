@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect planning, scanning, execution, or interface behavior
+description: Report incorrect migration planning, execution, state, or rollback behavior
 title: "[Bug]: "
 labels:
   - bug
@@ -7,12 +7,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve FileNest. Use synthetic files and remove private paths or journal content.
+        Thanks for helping improve MoonMigrate. Use synthetic files and remove private paths, configuration values, backups, and journal content.
   - type: input
     id: version
     attributes:
-      label: FileNest commit or version
-      placeholder: e.g. 0.2.0 or a commit SHA
+      label: MoonMigrate commit or version
+      placeholder: e.g. 0.3.0 or a commit SHA
     validations:
       required: true
   - type: input
@@ -28,12 +28,11 @@ body:
     attributes:
       label: Affected area
       options:
-        - Scan and duplicate detection
-        - Classification and renaming
-        - Preview and conflict handling
-        - Apply, history, or undo
-        - Browser workspace
-        - CLI or reports
+        - Manifest validation and version routing
+        - Filesystem preflight
+        - Apply and journal
+        - Status and rollback
+        - CLI or JSON output
         - Build and documentation
     validations:
       required: true
@@ -41,7 +40,7 @@ body:
     id: reproduction
     attributes:
       label: Minimal reproduction
-      description: Describe the synthetic directory, rule file, command, and steps.
+      description: Describe the synthetic directory, sanitized manifest, command, and steps.
     validations:
       required: true
   - type: textarea
@@ -61,5 +60,5 @@ body:
     attributes:
       label: Safety check
       options:
-        - label: I removed private files, access tokens, personal paths, and real `.filenest` journals.
+        - label: I removed private files, configuration values, access tokens, personal paths, and real `.moonmigrate` state.
           required: true

@@ -1,12 +1,12 @@
-# 参与开发
+# Contributing
 
-1. 安装最新稳定版 MoonBit 工具链和对应平台的 C 工具链。
-2. 运行 README 中的 JS 与 Native 检查、测试和构建命令。
-3. 核心规则放在根 MoonBit 包；操作系统能力放在 `native`；浏览器状态和渲染放在 `webui`。
-4. 浏览器 FFI 只映射必要平台原语，不在 FFI 字符串中实现业务逻辑。
-5. 修改执行或恢复逻辑时，在可丢弃的临时目录验证真实移动、目标占用和撤销。
-6. 不提交 `_build`、`.mooncakes`、`.tools`、`.filenest` 或任何生成的 JavaScript。
+1. Install the latest stable MoonBit toolchain and the Native C toolchain for your platform.
+2. Run the checks documented in `docs/TESTING.md` before committing.
+3. Keep deterministic manifest validation in the root package and operating-system behavior in `native`.
+4. Preserve the preview-before-apply rule and non-overwriting destination behavior.
+5. Changes to execution or recovery must include a real temporary-directory test that applies and rolls back the affected operation.
+6. Do not commit `_build`, `.mooncakes`, `.tools`, `.moonmigrate`, `.filenest`, `.private`, generated JavaScript, or application data.
 
-提交问题时，请附上 MoonBit 版本、操作系统、规则文件、预期和实际行为。不要上传私人文件、敏感路径或真实 `.filenest` 日志；请用合成文件构造最小复现。
+Issues should include the MoonBit version, operating system, sanitized manifest, expected result, and actual result. Use synthetic files and omit private paths, configuration values, backups, journals, and credentials.
 
-代码规模以 Git 跟踪的 `.mbt` 源文件物理行数为准。功能、可读性和测试优先，禁止通过空行、复制或生成代码增加行数。
+Code size is measured from tracked `.mbt` sources, but readability, behavior, and tests take priority. Empty lines, copied implementations, or generated source must not be added to increase the count.

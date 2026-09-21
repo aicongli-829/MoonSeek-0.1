@@ -1,73 +1,53 @@
-# FileNest CLI Reference
+# MoonMigrate CLI reference
 
 Run commands from the repository root:
 
 ```sh
-moon run --target native cmd/filenest -- <command> [arguments]
+moon run --target native cmd/moonmigrate -- <command> [arguments]
 ```
 
-Use forward slashes or a quoted native path. Commands that inspect files print structured JSON unless another format is requested.
+Paths may use forward slashes or quoted native separators. Commands print structured JSON so installers and application launchers can consume the result.
 
-## Global options
-
-| Option | Purpose |
-| --- | --- |
-| `--version` | Print the FileNest version. |
-| `--config <file>` | Load validated options from JSON. |
-| `--rules <file>` | Compile a readable `.fnrules` file. |
-| `--yes` | Explicitly authorize `apply` or `undo`. |
-
-`--config` and `--rules` are mutually exclusive.
-
-## Browser workspace
+## Plan
 
 ```sh
-moon run --target native cmd/filenest -- serve
-moon run --target native cmd/filenest -- serve --root "D:/Downloads" --port 4174
+moon run --target native cmd/moonmigrate -- migrate-plan ROOT --manifest migrations.json
+moon run --target native cmd/moonmigrate -- migrate-plan ROOT --manifest migrations.json --to 2
 ```
 
-The server binds to `127.0.0.1`. The default port is `4173`; accepted custom ports are `1024` through `65535`.
+`migrate-plan` reads the installed state, resolves a contiguous version route, validates all manifest steps, and checks the real filesystem. It does not modify the root.
 
-## Scan and analyze
+## Apply
 
 ```sh
-moon run --target native cmd/filenest -- scan "D:/Downloads"
-moon run --target native cmd/filenest -- analyze "D:/Downloads" --config examples/downloads.json
+moon run --target native cmd/moonmigrate -- migrate-apply ROOT --manifest migrations.json --yes
+moon run --target native cmd/moonmigrate -- migrate-apply ROOT --manifest migrations.json --to 2 --yes
 ```
 
-`scan` returns the inventory and confirmed duplicate groups. `analyze` summarizes categories, extensions, size bands, directories, and reclaimable duplicate space. Neither command moves files.
+Apply requires the explicit `--yes` flag. It repeats preflight under an exclusive lock, writes a journal before mutation, records every action phase, and advances the installed version only after all steps complete.
 
-## Preview and apply
+Without `--yes`, the command prints the preview and exits without applying it.
+
+## Status
 
 ```sh
-moon run --target native cmd/filenest -- preview "D:/Downloads" --rules examples/downloads.fnrules
-moon run --target native cmd/filenest -- preview "D:/Downloads" --config examples/downloads.json --csv
-moon run --target native cmd/filenest -- apply "D:/Downloads" --config examples/downloads.json --yes
+moon run --target native cmd/moonmigrate -- migrate-status ROOT
 ```
 
-`preview` creates the same deterministic plan used by `apply`. Without `--yes`, `apply` prints the plan and stops. With `--yes`, FileNest rescans and verifies file fingerprints before starting a journaled transaction.
+The result contains the project identity, installed version, and history records under `.moonmigrate`.
 
-## Snapshots and differences
+## Rollback
 
 ```sh
-moon run --target native cmd/filenest -- snapshot "D:/Downloads" --output before.json
-moon run --target native cmd/filenest -- diff "D:/Downloads" --snapshot before.json
+moon run --target native cmd/moonmigrate -- migrate-rollback ROOT BATCH-ID --yes
 ```
 
-A snapshot contains relative paths and file metadata. `diff` reports added, removed, modified, and moved files against the current directory state.
+Rollback visits actions in reverse order and restores the previous version. A completed batch can only roll back while its target remains installed; this prevents an older batch from crossing newer migrations.
 
-## History and undo
+## Exit safety
 
-```sh
-moon run --target native cmd/filenest -- history "D:/Downloads"
-moon run --target native cmd/filenest -- undo "D:/Downloads" BATCH-ID --yes
-```
-
-History is stored under the selected root in `.filenest/history`. Undo refuses to overwrite files restored after the original operation and verifies the current files before moving them.
-
-## Safety checklist
-
-1. Run `preview` and inspect every conflict.
-2. Keep important folders backed up independently.
-3. Do not edit `.filenest` while a transaction is active.
-4. Test new rules on a temporary directory before applying them to personal files.
+- Manifest paths cannot escape `ROOT` or enter reserved state directories.
+- Existing symbolic links and junctions are rejected.
+- Move and copy targets are never replaced.
+- A running or failed batch blocks the next apply until it is rolled back.
+- Keep `.moonmigrate` with the application data until its rollback window closes.

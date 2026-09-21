@@ -1,67 +1,52 @@
-# Testing and Troubleshooting
+# Testing and troubleshooting
 
-FileNest has a deterministic core, a Native filesystem layer, and a MoonBit-generated browser application. Validate the layer you changed, then run the complete matrix before merging.
-
-## Complete check
+## Complete verification
 
 ```sh
 moon update
 moon fmt --check
-moon check --target js
-moon test --target js
-moon build webui --target js --release
 moon check --target native
 moon test --target native
-moon build cmd/filenest --target native --release
+moon build cmd/moonmigrate --target native --release
 ```
 
-The JavaScript target runs core tests. The Native target also covers SHA-256, timestamp conversion, real directory scanning, duplicate confirmation, journaled moves, and undo.
+The Native suite covers manifest validation, version routing, path safety, SHA-256, real filesystem operations, installed state, journals, and complete rollback. JavaScript checks remain in CI as regression coverage for the portable core and visual transaction example.
 
 ## Manual smoke test
 
-Create a disposable directory containing two identical text files and one different image or text file. Never use irreplaceable data for a development smoke test.
+Create a disposable directory and copy `examples/moonmigrate.json`. Add only synthetic files that match the optional examples, then run:
 
 ```sh
-moon run --target native cmd/filenest -- scan "path/to/smoke"
-moon run --target native cmd/filenest -- preview "path/to/smoke" --config examples/downloads.json
-moon run --target native cmd/filenest -- apply "path/to/smoke" --config examples/downloads.json --yes
-moon run --target native cmd/filenest -- history "path/to/smoke"
-moon run --target native cmd/filenest -- undo "path/to/smoke" BATCH-ID --yes
+moon run --target native cmd/moonmigrate -- migrate-plan ./smoke --manifest examples/moonmigrate.json
+moon run --target native cmd/moonmigrate -- migrate-apply ./smoke --manifest examples/moonmigrate.json --yes
+moon run --target native cmd/moonmigrate -- migrate-status ./smoke
+moon run --target native cmd/moonmigrate -- migrate-rollback ./smoke BATCH-ID --yes
 ```
 
-Confirm that preview and apply produce the same destinations, no pre-existing target changes, history records every move, and undo restores all source paths.
-
-## Browser smoke test
-
-```sh
-moon build webui --target js --release
-moon run --target native cmd/filenest -- serve --root "path/to/smoke"
-```
-
-Open `http://127.0.0.1:4173`, scan the disposable folder, inspect the preview, visit duplicate files, history, and templates, then verify that the browser console contains no errors. Apply is optional when the same transaction has already been tested through the CLI.
+Confirm that planning changes nothing, apply reaches version 2, rollback restores original contents, and migration-created files and empty directories disappear.
 
 ## Common failures
 
 ### Registry dependency not found
 
-Run `moon update`. A fresh MoonBit installation may not yet have a current Mooncakes registry index, so CI performs this before dependency resolution.
+Run `moon update`. A fresh toolchain may not yet have a current Mooncakes registry index.
 
 ### Native compiler is unavailable
 
-Install the platform C toolchain. On Windows, use Visual Studio Build Tools with the C++ workload. On Linux or macOS, install the system compiler supported by the MoonBit toolchain.
+Install the platform C toolchain. Windows uses Visual Studio Build Tools with the C++ workload; Linux and macOS use a supported system compiler.
 
-### Browser page loads without behavior
+### A migration lock remains
 
-Rebuild `webui` with the JS release target. The server reads `_build/js/release/build/webui/webui.js`; generated JavaScript is intentionally absent from Git.
+Confirm that no MoonMigrate process is running. Inspect `.moonmigrate/history` before removing `.moonmigrate/lock`. Never remove an active lock to run two migrations at once.
 
-### A stale operation lock remains
+### Apply reports an unfinished batch
 
-First confirm that no FileNest process is running for that root. Inspect `.filenest/history` before manually removing `.filenest/lock`. Never remove an active lock to force two simultaneous transactions.
+Inspect the batch shown by `migrate-status`, then use `migrate-rollback ROOT BATCH-ID --yes`. A later apply is intentionally blocked until the partial transition is resolved.
 
-### Apply reports that a file changed
+### A hash or text precondition fails
 
-Rescan and preview again. FileNest rejects execution when size, modification time, or SHA-256 differs from the approved inventory.
+The installed file no longer matches the expected old release. Do not bypass the check automatically. Review the user-modified content and create an explicit migration path when appropriate.
 
 ## Reporting failures
 
-Include the operating system, MoonBit version, command, synthetic directory layout, rule file, and the smallest relevant output. Do not upload personal files, access tokens, full home-directory paths, or real transaction journals.
+Include the operating system, MoonBit version, command, synthetic directory layout, sanitized manifest, and smallest relevant output. Never upload real application data, access tokens, absolute home paths, `.moonmigrate` backups, or private journals.

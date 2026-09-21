@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a practical FileNest workflow or improvement
+description: Propose a practical MoonMigrate workflow or improvement
 title: "[Feature]: "
 labels:
   - enhancement
@@ -8,7 +8,7 @@ body:
     id: problem
     attributes:
       label: Problem to solve
-      description: Describe the file organization task that is difficult today.
+      description: Describe the application-data upgrade or recovery task that is difficult today.
     validations:
       required: true
   - type: textarea
@@ -29,10 +29,10 @@ body:
     attributes:
       label: Preferred interface
       options:
-        - Core behavior shared by CLI and browser
-        - Browser workspace
+        - Manifest and version planning
+        - Native execution and recovery
         - Native CLI
-        - Rule file or configuration
+        - Library API
         - Documentation or examples
     validations:
       required: true
@@ -44,5 +44,5 @@ body:
       options:
         - label: Preview before execution
         - label: Never overwrite an existing target
-        - label: Journal and undo support
+        - label: Journal and rollback support
         - label: Deterministic output

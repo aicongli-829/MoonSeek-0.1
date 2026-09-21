@@ -1,107 +1,107 @@
-# FileNest · 文件归巢
+# MoonMigrate
 
 简体中文 | [English](README.en.md)
 
-FileNest Core 是一个使用 MoonBit 开发的安全文件批处理与可恢复事务引擎。“文件归巢”本地工作台和 CLI 是它的完整示范应用，提供分类整理、批量重命名、重复文件检查和整批撤销。
+**MoonMigrate 是使用 MoonBit 编写的版本化文件系统迁移框架。** 它把应用升级时的目录重构、配置更新、资源搬迁和旧缓存隔离写成可审查的迁移清单，并提供预览、前置校验、事务日志和整批回滚。
 
-核心算法、原生文件系统适配、SHA-256、事务日志、CLI、本地 HTTP 服务和浏览器交互都使用 MoonBit。HTML/CSS 负责页面结构和样式；浏览器脚本由 MoonBit 编译生成，只保存在被 Git 忽略的 `_build` 目录。文件内容始终留在本机。
+数据库有成熟的 schema migration，应用数据目录却经常依赖一次性脚本。脚本执行到一半、目标已存在、旧文件被用户修改或版本链断裂时，很容易留下无法判断的混合状态。MoonMigrate 为这类升级任务提供统一的 MoonBit API 与 Native CLI。
 
-项目的必要性、可复用场景与千文件验证结果见[价值证明](docs/VALUE_PROOF.md)。
+## 适用场景
 
-## 功能
+- 桌面应用升级用户数据目录或配置格式；
+- 插件、编辑器扩展和本地服务迁移持久化状态；
+- 安装器与更新器搬迁资源并清理旧布局；
+- CLI 工具升级缓存、索引和生成产物目录；
+- 项目模板、素材管线和开发工作区演进；
+- 任何需要“先预览、可追溯、可回退”的批量文件变更。
 
-- **分类整理**：按类型、修改月份、类型与月份、自定义扩展名或关键词归档。
-- **安全批处理引擎**：确定性规划、冲突诊断、两阶段暂存、文件指纹复核和批次日志。
-- **批量重命名**：前后缀、删除、替换、大小写、空格规范化、自然顺序编号和正则规则。
-- **重复文件检查**：先按大小与 SHA-256 筛选，再逐字节确认；副本移入可撤销的隔离目录。
-- **安全预览**：展示原路径、目标路径、冲突和无效项；目标已存在时绝不覆盖。
-- **事务与撤销**：所有文件先进入批次暂存区，每一步同步写入 JSON 日志；支持循环改名和整批恢复。
-- **分析与快照**：空间占用分析、重复空间建议，以及新增、删除、修改和移动对比。
-- **双界面**：本地浏览器工作台与原生 CLI 共用同一套 MoonBit 核心。
-- **报告**：导出 CSV、JSON 和 Markdown 预览。
-- **可读规则**：`.fnrules` 支持注释、扫描范围、分类和重命名流水线。
+## 已实现
 
-## 环境
+- **版本化迁移链**：校验迁移 ID、版本范围、分支、断点和目标版本边界。
+- **六种操作**：`mkdir`、`move`、`copy`、`write`、`replace`、`quarantine`。
+- **执行前预检**：路径、文件类型、目标占用、文本条件和可选 SHA-256 前置条件。
+- **安全执行**：所有路径限制在所选根目录；移动和复制不覆盖已有目标。
+- **持久状态**：在 `.moonmigrate/state.json` 记录当前数据版本。
+- **逐步日志**：在 `.moonmigrate/history` 记录每一步的 `pending/running/done` 状态。
+- **整批回滚**：反向恢复移动、写入、替换和隔离操作，清理迁移创建的文件与空目录。
+- **可选步骤**：允许兼容不同历史安装状态，同时保持计划可审计。
+- **纯 MoonBit 实现**：核心模型、CLI、SHA-256、原生文件操作与测试均为 MoonBit。
 
-安装 [MoonBit 工具链](https://www.moonbitlang.com/download)。项目不需要 Node.js，也没有 npm 依赖。
+## 快速开始
 
-Windows 下首次使用 Native 目标时，MoonBit 可能调用已安装的 Visual Studio Build Tools。Linux/macOS 使用系统 C 工具链。
-
-## 启动图形界面
+安装 [MoonBit 工具链](https://www.moonbitlang.com/download)，然后：
 
 ```sh
-git clone https://github.com/aicongli-829/FileNest.git
-cd FileNest
+git clone https://github.com/aicongli-829/MoonMigrate-v1.0.git
+cd MoonMigrate-v1.0
 moon update
-moon build webui --target js --release
-moon run --target native cmd/filenest -- serve
+moon run --target native cmd/moonmigrate -- migrate-plan ./demo --manifest examples/moonmigrate.json
 ```
 
-浏览器打开 `http://127.0.0.1:4173`。服务仅监听 `127.0.0.1`。指定初始目录或端口：
+预览通过后显式执行：
 
 ```sh
-moon run --target native cmd/filenest -- serve --root "D:/Downloads" --port 4174
+moon run --target native cmd/moonmigrate -- migrate-apply ./demo --manifest examples/moonmigrate.json --yes
+moon run --target native cmd/moonmigrate -- migrate-status ./demo
+moon run --target native cmd/moonmigrate -- migrate-rollback ./demo BATCH-ID --yes
 ```
 
-## 命令行
+可用 `--to 2` 只迁移到指定版本。清单格式、完整示例和回滚语义见[迁移指南](docs/MIGRATIONS.md)。
 
-```sh
-moon run --target native cmd/filenest -- --help
-moon run --target native cmd/filenest -- scan "D:/Downloads"
-moon run --target native cmd/filenest -- analyze "D:/Downloads"
-moon run --target native cmd/filenest -- preview "D:/Downloads" --config examples/downloads.json
-moon run --target native cmd/filenest -- preview "D:/Downloads" --rules examples/downloads.fnrules --csv
-moon run --target native cmd/filenest -- apply "D:/Downloads" --config examples/downloads.json --yes
-moon run --target native cmd/filenest -- snapshot "D:/Downloads" --output before.json
-moon run --target native cmd/filenest -- diff "D:/Downloads" --snapshot before.json
-moon run --target native cmd/filenest -- history "D:/Downloads"
-moon run --target native cmd/filenest -- undo "D:/Downloads" BATCH-ID --yes
+## 清单示例
+
+```json
+{
+  "formatVersion": 1,
+  "project": "notes-app",
+  "migrations": [{
+    "id": "data-v1",
+    "fromVersion": 0,
+    "toVersion": 1,
+    "steps": [
+      { "id": "layout", "op": "mkdir", "path": "data/v1" },
+      { "id": "settings", "op": "move", "from": "settings.json", "to": "config/settings.json" },
+      { "id": "marker", "op": "write", "path": "data/version", "content": "1\n" },
+      { "id": "old-cache", "op": "quarantine", "from": "cache/index.old", "optional": true }
+    ]
+  }]
+}
 ```
 
-`scan` 和 `preview` 不会移动文件。`apply` 必须显式传入 `--yes`，并在执行前重新扫描和验证文件指纹。
+`expectedSha256` 可用于 `move`、`copy`、`write`、`replace` 和 `quarantine`，确保迁移只处理开发者验证过的旧内容。
 
-## 开发与验证
+## 与一次性脚本的差别
+
+| 能力 | 一次性脚本 | MoonMigrate |
+|---|---|---|
+| 执行前完整预览 | 通常没有 | 有 |
+| 版本链与断点校验 | 手工处理 | 自动 |
+| 目标防覆盖 | 取决于脚本 | 强制 |
+| 内容前置条件 | 需重复实现 | SHA-256 / 文本条件 |
+| 中间状态记录 | 需重复实现 | 逐步持久化日志 |
+| 回滚 | 通常另写脚本 | 由执行记录生成 |
+| 可复用 API | 很少 | MoonBit 核心与 Native 层 |
+
+## 开发验证
 
 ```sh
-moon update
 moon fmt --check
-moon check --target js
-moon test --target js
-moon build webui --target js --release
 moon check --target native
 moon test --target native
-moon build cmd/filenest --target native --release
+moon build cmd/moonmigrate --target native --release
 ```
 
-项目测试覆盖排序、分类、命名、路径校验、配置、报告、分析、快照、规则解析、事务状态机、SHA-256 和 Windows 时间换算。原生集成测试会在临时目录完成扫描、重复文件确认，以及一次完整的 `apply` 与 `undo`。
+当前测试包含迁移链规划、无效路径与版本诊断，以及在真实临时目录中依次执行六类操作并完整回滚。
 
 ## 项目结构
 
 ```text
-/*.mbt             确定性的 MoonBit 核心库
-/native/*.mbt      文件扫描、SHA-256、事务、HTTP 服务和 CLI
-/webui/*.mbt       浏览器状态、规则编辑、渲染与请求编排
-/cmd/filenest      MoonBit Native 可执行程序入口
-/web               静态 HTML 和 CSS
-/examples          JSON 与 .fnrules 示例
-/docs              架构和来源说明
+/migration.mbt          迁移清单模型、校验与确定性计划
+/native/migrations.mbt  原生预检、执行、日志、版本状态与回滚
+/cmd/moonmigrate        MoonBit Native CLI 入口
+/examples               可运行的迁移清单
+/docs/MIGRATIONS.md     清单与安全语义
+/native                 路径、SHA-256 和原生事务基础设施
 ```
 
-`examples/` 包含下载目录、照片、课程资料、代码仓库迁移和数据集预处理规则。首次使用任何规则时都应先执行 `preview`。
-
-仓库不跟踪手写 `.js` 或 `.mjs` 文件。`moon build webui --target js --release` 生成浏览器可执行脚本。
-
-## 安全边界
-
-- 根目录和每个相对路径都经过校验；拒绝绝对路径、`..`、符号链接和内部状态目录。
-- 服务校验 loopback Host、同源 Origin、跨站请求标记和随机会话令牌。
-- 执行与撤销都会重新核对大小、修改时间和 SHA-256。
-- 文件移动使用原生 `rename(..., replace=false)`；操作系统保证目标存在时失败。
-- 两阶段暂存支持名称交换与循环移动，日志使用同步临时文件和原子替换更新。
-- 一次最多扫描 10,000 个文件。当前实现会读取文件内容计算摘要，大文件扫描需要时间。
-- 重复副本只会隔离，不会永久删除。
-- 遗留 `.filenest/lock` 需要在确认没有 FileNest 进程运行后手动删除。
-
-## 开源与参赛
-
-项目使用 [MIT License](LICENSE)。必要性与价值证明见 [docs/VALUE_PROOF.md](docs/VALUE_PROOF.md)，生态查重和来源见 [docs/PROVENANCE.md](docs/PROVENANCE.md)，工程设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。Mooncakes 发布前仍需确认参赛账号命名空间。
+项目采用 [MIT License](LICENSE)。生态差异见[选题与生态对比](docs/ECOSYSTEM.md)，工程细节见[架构说明](docs/ARCHITECTURE.md)。

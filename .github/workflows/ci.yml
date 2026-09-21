@@ -1,4 +1,4 @@
-name: Check FileNest
+name: Check MoonMigrate
 
 on:
   push:
@@ -24,12 +24,11 @@ jobs:
           moon fmt --check
           moon check --target js
           moon test --target js
-          moon build webui --target js --release
       - name: Check Native target and tests
         run: |
           moon check --target native
           moon test --target native
-          moon build cmd/filenest --target native --release
+          moon build cmd/moonmigrate --target native --release
       - name: Verify source-size target
         run: |
           lines=$(git ls-files '*.mbt' | xargs cat | wc -l)

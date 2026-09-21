@@ -1,38 +1,32 @@
-# FileNest Roadmap
+# MoonMigrate roadmap
 
-The roadmap prioritizes safe file operations and practical local workflows. Dates are intentionally omitted until each milestone has an owner and test plan.
+## 0.3 · Working migration engine
 
-## 0.2 · MoonBit runtime
+- [x] Versioned JSON manifest and contiguous-chain planning.
+- [x] Native dry-run with filesystem preconditions.
+- [x] Directory, move, copy, write, replace, and quarantine steps.
+- [x] Durable state, per-step journal, backups, and reverse rollback.
+- [x] Real-filesystem integration test for apply and rollback.
+- [x] Dedicated `moonmigrate` Native executable.
 
-- [x] Deterministic classification and batch rename planning.
-- [x] Native recursive scan and SHA-256 duplicate detection.
-- [x] Two-stage apply and undo transactions.
-- [x] Local browser workspace generated from MoonBit.
-- [x] Native CLI, snapshots, analysis, reports, and templates.
-- [x] JavaScript and Native automated test targets.
+## 0.4 · Recovery and authoring
 
-## 0.3 · Everyday usability
+- [ ] Add explicit resume and reconcile commands for interrupted steps.
+- [ ] Generate new manifests with an `init` command.
+- [ ] Publish a JSON Schema and editor completion metadata.
+- [ ] Add step-level postconditions and a first-occurrence replace mode.
+- [ ] Add machine-readable plan output modes for installer integration.
 
-- [ ] Show scan and hashing progress for large folders.
-- [ ] Add Chinese and English switching in the browser workspace.
-- [ ] Provide more built-in templates for photos, coursework, and scanned documents.
-- [ ] Improve keyboard navigation and screen-reader labels.
-- [ ] Add a recovery guide for interrupted transactions.
+## 0.5 · Cross-platform confidence
 
-## 0.4 · Cross-platform confidence
+- [ ] Run migration integration tests on Windows, Linux, and macOS in CI.
+- [ ] Test permission failures, disk exhaustion, and process interruption.
+- [ ] Add backup retention and garbage-collection commands.
+- [ ] Benchmark manifests with thousands of steps.
 
-- [ ] Run integration tests on Windows, Linux, and macOS in CI.
-- [ ] Document platform-specific filename and timestamp behavior.
-- [ ] Measure memory and scan time on large synthetic datasets.
-- [ ] Add bounded hashing concurrency without changing deterministic output.
+## 1.0 · Stable library
 
-## 1.0 · Stable release
-
-- [ ] Freeze the CLI and `.fnrules` compatibility contract.
+- [ ] Freeze manifest format version 1 and CLI compatibility.
+- [ ] Publish the reusable core and Native packages to Mooncakes.
 - [ ] Publish signed release archives and checksums.
-- [ ] Publish the reusable MoonBit module to Mooncakes.
-- [ ] Complete security, accessibility, and recovery reviews.
-
-## Contribution priorities
-
-Issues that prevent data loss, incorrect planning, or reliable undo take priority. Performance work must include a repeatable benchmark, and new rename operations must include collision and Unicode tests.
+- [ ] Complete recovery, security, and documentation reviews.

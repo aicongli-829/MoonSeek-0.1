@@ -1,6 +1,6 @@
 ## Problem and result
 
-Describe the concrete FileNest workflow that was incorrect, missing, or difficult, followed by the resulting behavior.
+Describe the concrete MoonMigrate workflow that was incorrect, missing, or difficult, followed by the resulting behavior.
 
 ## Changes
 
@@ -12,10 +12,9 @@ List the commands and manual workflows used to verify the change. For file opera
 
 ```text
 moon fmt --check
-moon check --target js
-moon test --target js
 moon check --target native
 moon test --target native
+moon build cmd/moonmigrate --target native --release
 ```
 
 ## Safety review
@@ -23,7 +22,7 @@ moon test --target native
 - [ ] Plans remain deterministic for identical inputs.
 - [ ] Existing destination files are never overwritten.
 - [ ] New file operations are journaled and can be audited.
-- [ ] Apply and undo revalidate affected files.
+- [ ] Apply and rollback revalidate affected files.
 - [ ] Tests and examples use synthetic data without private paths.
 
 Remove checks that do not apply and explain any intentional limitation.
