@@ -2,13 +2,16 @@
 
 简体中文 | [English](README.en.md)
 
-FileNest 是一个使用 MoonBit 开发的本地文件整理工具，提供分类整理、批量重命名、重复文件检查和可撤销操作。
+FileNest Core 是一个使用 MoonBit 开发的安全文件批处理与可恢复事务引擎。“文件归巢”本地工作台和 CLI 是它的完整示范应用，提供分类整理、批量重命名、重复文件检查和整批撤销。
 
 核心算法、原生文件系统适配、SHA-256、事务日志、CLI、本地 HTTP 服务和浏览器交互都使用 MoonBit。HTML/CSS 负责页面结构和样式；浏览器脚本由 MoonBit 编译生成，只保存在被 Git 忽略的 `_build` 目录。文件内容始终留在本机。
+
+项目的必要性、可复用场景与千文件验证结果见[价值证明](docs/VALUE_PROOF.md)。
 
 ## 功能
 
 - **分类整理**：按类型、修改月份、类型与月份、自定义扩展名或关键词归档。
+- **安全批处理引擎**：确定性规划、冲突诊断、两阶段暂存、文件指纹复核和批次日志。
 - **批量重命名**：前后缀、删除、替换、大小写、空格规范化、自然顺序编号和正则规则。
 - **重复文件检查**：先按大小与 SHA-256 筛选，再逐字节确认；副本移入可撤销的隔离目录。
 - **安全预览**：展示原路径、目标路径、冲突和无效项；目标已存在时绝不覆盖。
@@ -84,6 +87,8 @@ moon build cmd/filenest --target native --release
 /docs              架构和来源说明
 ```
 
+`examples/` 包含下载目录、照片、课程资料、代码仓库迁移和数据集预处理规则。首次使用任何规则时都应先执行 `preview`。
+
 仓库不跟踪手写 `.js` 或 `.mjs` 文件。`moon build webui --target js --release` 生成浏览器可执行脚本。
 
 ## 安全边界
@@ -99,4 +104,4 @@ moon build cmd/filenest --target native --release
 
 ## 开源与参赛
 
-项目使用 [MIT License](LICENSE)。生态查重、依赖和来源见 [docs/PROVENANCE.md](docs/PROVENANCE.md)，工程设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。Mooncakes 发布前仍需确认参赛账号命名空间。
+项目使用 [MIT License](LICENSE)。必要性与价值证明见 [docs/VALUE_PROOF.md](docs/VALUE_PROOF.md)，生态查重和来源见 [docs/PROVENANCE.md](docs/PROVENANCE.md)，工程设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。Mooncakes 发布前仍需确认参赛账号命名空间。

@@ -12,6 +12,6 @@ license = "MIT"
 
 keywords = [ "files", "organizer", "rename", "local-first" ]
 
-description = "Deterministic file organization and rename planner for FileNest"
+description = "Safe filesystem planning and recoverable batch transactions in MoonBit"
 
 preferred_target = "native"

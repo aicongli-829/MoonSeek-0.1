@@ -2,13 +2,16 @@
 
 English | [简体中文](README.md)
 
-FileNest is a local file organization tool written in MoonBit. It combines file classification, batch renaming, duplicate detection, safe previews, and undoable operations in one application.
+FileNest Core is a safe filesystem batch-processing and recoverable transaction engine written in MoonBit. The local FileNest workspace and CLI are complete example applications for classification, batch renaming, duplicate detection, safe previews, and batch undo.
 
 The planning engine, native filesystem adapter, SHA-256 implementation, transaction journal, CLI, local HTTP server, and browser behavior are all written in MoonBit. HTML and CSS provide page structure and styling. MoonBit generates the browser JavaScript during the build, and the generated file stays in the ignored `_build` directory. File contents never leave the computer.
+
+See the [value and validation evidence](docs/VALUE_PROOF.md) for the ecosystem gap, reusable scenarios, and the 1,200-file synthetic test.
 
 ## Features
 
 - **File classification:** Organize by file type, modification month, type and month, custom extension rules, or keyword rules.
+- **Safe batch engine:** Deterministic plans, conflict diagnostics, two-stage staging, fingerprint checks, and batch journals.
 - **Batch renaming:** Add prefixes and suffixes, remove or replace text, normalize spaces and case, add naturally ordered numbers, and apply regular expressions.
 - **Duplicate detection:** Group candidates by size and SHA-256, then confirm matches byte for byte.
 - **Safe preview:** Review source paths, destinations, conflicts, and invalid entries before changing files. Existing targets are never overwritten.
@@ -84,6 +87,8 @@ The test suite covers sorting, classification, renaming, path validation, config
 /docs              Architecture and provenance notes
 ```
 
+`examples/` includes rules for downloads, photos, coursework, repository migrations, and dataset preprocessing. Always run `preview` before applying a new rule.
+
 The repository tracks no handwritten `.js` or `.mjs` files. Run `moon build webui --target js --release` to generate the browser executable.
 
 ## Safety model
@@ -99,4 +104,4 @@ The repository tracks no handwritten `.js` or `.mjs` files. Run `moon build webu
 
 ## Open source
 
-FileNest is released under the [MIT License](LICENSE). See [Provenance](docs/PROVENANCE.md) for dependency and ecosystem research, and [Architecture](docs/ARCHITECTURE.md) for the engineering design. Confirm the competition account namespace before publishing to Mooncakes.
+FileNest is released under the [MIT License](LICENSE). See [Value Proof](docs/VALUE_PROOF.md) for necessity and validation evidence, [Provenance](docs/PROVENANCE.md) for dependency and ecosystem research, and [Architecture](docs/ARCHITECTURE.md) for the engineering design. Confirm the competition account namespace before publishing to Mooncakes.
