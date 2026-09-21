@@ -1,7 +1,7 @@
 ///|
 let reserved_directories : Array[String] = [
-  ".git", ".filenest", ".tools", ".mooncakes", "_build", "target", "node_modules",
-  "重复文件隔离",
+  ".git", ".filenest", ".moonmigrate", ".tools", ".mooncakes", "_build", "target",
+  "node_modules", "重复文件隔离",
 ]
 
 ///|

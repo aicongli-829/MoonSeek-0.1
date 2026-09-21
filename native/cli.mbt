@@ -1,8 +1,14 @@
 ///|
 let cli_help =
-  #|FileNest · local file organization in MoonBit
+  #|MoonMigrate · versioned filesystem migrations in MoonBit
   #|
   #|Usage:
+  #|  moon run --target native cmd/moonmigrate -- migrate-plan <root> --manifest migrations.json [--to version]
+  #|  moon run --target native cmd/moonmigrate -- migrate-apply <root> --manifest migrations.json [--to version] --yes
+  #|  moon run --target native cmd/moonmigrate -- migrate-status <root>
+  #|  moon run --target native cmd/moonmigrate -- migrate-rollback <root> <batch-id> --yes
+  #|
+  #|Legacy FileNest organizer commands:
   #|  moon run --target native cmd/filenest -- serve [--port 4173] [--root folder]
   #|  moon run --target native cmd/filenest -- scan <folder> [--config rules.json]
   #|  moon run --target native cmd/filenest -- analyze <folder> [--config rules.json]
@@ -13,7 +19,7 @@ let cli_help =
   #|  moon run --target native cmd/filenest -- history <folder>
   #|  moon run --target native cmd/filenest -- undo <folder> <batch-id> --yes
   #|
-  #|MoonBit Native performs every file operation. Plans are previewed first, targets are never overwritten, and journals are stored in .filenest/history.
+  #|MoonMigrate previews and validates every version transition, never overwrites a destination, and records reversible journals in .moonmigrate/history.
 
 ///|
 fn argument_after(args : Array[String], flag : String) -> String? {
@@ -23,6 +29,20 @@ fn argument_after(args : Array[String], flag : String) -> String? {
     }
   }
   None
+}
+
+///|
+fn optional_version_argument(args : Array[String]) -> Int? raise {
+  match argument_after(args, "--to") {
+    None => None
+    Some(text) => {
+      let version = @string.parse_int(text) catch {
+        _ => fail("--to must be a non-negative integer")
+      }
+      guard version >= 0 else { fail("--to must be a non-negative integer") }
+      Some(version)
+    }
+  }
 }
 
 ///|
@@ -113,7 +133,7 @@ fn print_result(value : Json) -> Unit {
 pub async fn run_cli(args : Array[String]) -> Unit {
   let commands = [
     "serve", "scan", "analyze", "preview", "apply", "snapshot", "diff", "history",
-    "undo",
+    "undo", "migrate-plan", "migrate-apply", "migrate-status", "migrate-rollback",
   ]
   let mut command_index : (Int, String)? = None
   for index, value in args {
@@ -122,7 +142,7 @@ pub async fn run_cli(args : Array[String]) -> Unit {
     }
   }
   if args.contains("--version") {
-    println("FileNest 0.2.0 · MoonBit Native")
+    println("MoonMigrate 0.3.0 · MoonBit Native")
     return
   }
   let (index, command) = match command_index {
@@ -148,6 +168,56 @@ pub async fn run_cli(args : Array[String]) -> Unit {
   }
   guard index + 1 < args.length() else { fail("缺少文件夹路径") }
   let root_input = args[index + 1]
+  if command == "migrate-status" {
+    print_result(
+      parse_document(migration_status_json(root_input), "migration status"),
+    )
+    return
+  }
+  if command == "migrate-rollback" {
+    guard index + 2 < args.length() && args.contains("--yes") else {
+      fail("migrate-rollback requires a batch ID and --yes")
+    }
+    print_result(
+      parse_document(
+        migration_rollback_json(root_input, args[index + 2]),
+        "migration rollback",
+      ),
+    )
+    return
+  }
+  if command == "migrate-plan" || command == "migrate-apply" {
+    let manifest_path = argument_after(args, "--manifest").unwrap_or_else(() => {
+      fail("migration commands require --manifest <file>")
+    })
+    let manifest = read_text(manifest_path)
+    let target = optional_version_argument(args)
+    if command == "migrate-plan" {
+      print_result(
+        parse_document(
+          migration_preview_json(root_input, manifest, target),
+          "migration preview",
+        ),
+      )
+    } else {
+      guard args.contains("--yes") else {
+        print_result(
+          parse_document(
+            migration_preview_json(root_input, manifest, target),
+            "migration preview",
+          ),
+        )
+        fail("the preview above is read-only; pass --yes to apply it")
+      }
+      print_result(
+        parse_document(
+          migration_apply_json(root_input, manifest, target),
+          "migration execution",
+        ),
+      )
+    }
+    return
+  }
   if command == "history" {
     print_result(parse_document(history_json(root_input), "历史记录"))
     return

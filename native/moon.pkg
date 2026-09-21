@@ -1,5 +1,5 @@
 import {
-  "filenest/core",
+  "moonmigrate/core",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",

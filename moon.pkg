@@ -23,6 +23,7 @@ options(
         "validate_template_json",
         "configuration_defaults_json",
         "duplicate_advice_json",
+        "migration_plan_json",
       ],
       "format": "esm",
     },

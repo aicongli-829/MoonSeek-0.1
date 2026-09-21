@@ -81,9 +81,10 @@ pub fn path_error(value : String) -> String? {
     if filename_error(piece) is Some(error) {
       return Some(error)
     }
-    if [".git", ".filenest", "node_modules", ".tools", "_build", "target"].contains(
-        piece.to_lower(),
-      ) {
+    if [
+        ".git", ".filenest", ".moonmigrate", "node_modules", ".tools", "_build",
+        "target",
+      ].contains(piece.to_lower()) {
       return Some("不能写入保留目录")
     }
   }

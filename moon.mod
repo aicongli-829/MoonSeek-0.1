@@ -1,6 +1,6 @@
-name = "filenest/core"
+name = "moonmigrate/core"
 
-version = "0.2.0"
+version = "0.3.0"
 
 import {
   "moonbitlang/async@0.21.3",
@@ -10,8 +10,8 @@ readme = "README.md"
 
 license = "MIT"
 
-keywords = [ "files", "organizer", "rename", "local-first" ]
+keywords = [ "migration", "filesystem", "transaction", "rollback" ]
 
-description = "Safe filesystem planning and recoverable batch transactions in MoonBit"
+description = "Versioned, previewable, and reversible filesystem migrations in MoonBit"
 
 preferred_target = "native"
