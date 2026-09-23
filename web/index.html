@@ -1,201 +1,54 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light">
-    <title>FileNest · 文件归巢</title>
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Fast local filename and full-text search powered by MoonBit.">
+    <title>MoonSeek · Search your files instantly</title>
     <link rel="stylesheet" href="/style.css">
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="FileNest 首页">
-        <span class="brand-icon">▤</span>
-        <span>FileNest<small>文件归巢</small></span>
-      </a>
-      <div class="nav-caption">我的工作台</div>
-      <nav id="sidebar-nav" aria-label="主导航">
-        <button class="nav-item active" data-action="view" data-index="organize"><span>▦</span>分类与改名</button>
-        <button class="nav-item" data-action="view" data-index="duplicates"><span>▱</span>重复文件<span class="badge" id="duplicate-count">0</span></button>
-        <button class="nav-item" data-action="view" data-index="history"><span>↶</span>操作历史</button>
-        <button class="nav-item" data-action="view" data-index="templates"><span>◇</span>规则模板</button>
-      </nav>
-      <div class="sidebar-note">
-        <span class="status-dot"></span> 本地工作模式
-        <p>文件留在你的电脑。<br>每一次整理，都有迹可循。</p>
-      </div>
-      <div class="sidebar-footer">MoonBit powered · v0.2.0</div>
-    </aside>
-
+    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="MoonSeek home"><span class="brand-mark">M</span><span>MoonSeek<small>Local search engine</small></span></a>
+      <div class="privacy"><span></span>Local only · nothing is uploaded</div>
+    </header>
     <main>
-      <header class="topbar">
-        <span>工作空间 <span class="slash">/</span> <span id="breadcrumb">分类与改名</span></span>
-        <span class="local-label">● 文件不会上传</span>
-      </header>
-
-      <section class="intro">
-        <div>
-          <div class="eyebrow">A LITTLE ORDER, A LITTLE CALM</div>
-          <h1 id="page-title">让每个文件，各归其位。</h1>
-          <p id="page-description">分类、改名、检查重复。从一份清晰的预览开始。</p>
+      <section class="hero">
+        <p class="eyebrow">MOONBIT NATIVE SEARCH</p>
+        <h1>Find it before you finish typing.</h1>
+        <p>Index filenames and text once, then search every folder instantly.</p>
+        <div id="search-shell" class="search-shell">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="query" type="search" autocomplete="off" spellcheck="false" placeholder="Search filenames, paths, and file contents…" aria-label="Search indexed files">
+          <kbd>Ctrl K</kbd>
         </div>
-        <span class="intro-symbol" aria-hidden="true">▥</span>
+        <div class="query-help"><span>Filters:</span><code>ext:md,mbt</code><code>path:docs</code><code>root:notes</code><code>-draft</code></div>
       </section>
-
-      <section class="folder-card" aria-label="选择工作文件夹">
-        <div class="folder-icon" aria-hidden="true">▰</div>
-        <div class="folder-input-area">
-          <label for="root">工作文件夹</label>
-          <input id="root" placeholder="粘贴文件夹完整路径，例如 D:\Downloads" autocomplete="off">
-          <span class="muted small">在文件资源管理器地址栏复制路径；只处理你选择的文件夹。</span>
-        </div>
-        <button id="scan" class="primary">扫描文件夹 <span>→</span></button>
+      <section class="dashboard">
+        <aside class="control-panel">
+          <div class="panel-heading"><div><p class="eyebrow">INDEX</p><h2>Search locations</h2></div><button id="refresh-button" class="icon-button" title="Refresh">↻</button></div>
+          <label for="root">Add a folder</label>
+          <div class="add-folder"><input id="root" placeholder="C:\Users\you\Documents" autocomplete="off"><button id="index-button">Add folder</button></div>
+          <p class="hint">Text, Markdown, source code, logs, CSV, HTML, and common config formats are indexed by default.</p>
+          <div id="message" role="status" aria-live="polite" hidden></div>
+          <div id="root-list" class="root-list"></div>
+          <div class="syntax-card"><h3>Query syntax</h3><dl><dt>ext:md,txt</dt><dd>file types</dd><dt>path:docs</dt><dd>path contains</dd><dt>root:notes</dt><dd>indexed root</dd><dt>-draft</dt><dd>exclude term</dd></dl></div>
+        </aside>
+        <section class="results-panel">
+          <div class="result-heading"><div><p class="eyebrow">RESULTS</p><h2 id="result-count">Ready</h2></div><p>Filename matches receive the strongest ranking boost.</p></div>
+          <div id="results" class="results" aria-live="polite"><div class="empty-results"><div>⌕</div><h2>Search everything you indexed</h2><p>Type a filename, phrase, or content keyword.</p></div></div>
+        </section>
       </section>
-
-      <div id="message" role="status" aria-live="polite" hidden></div>
-      <section id="progress-panel" hidden aria-label="操作进度">
-        <div><strong id="progress-text">准备中</strong><button id="stop" class="ghost">停止后续操作</button></div>
-        <progress id="progress" max="100" value="0"></progress>
+      <section class="stats" aria-label="Index statistics">
+        <article><span id="stat-documents">0</span><small>documents</small></article>
+        <article><span id="stat-terms">0</span><small>unique terms</small></article>
+        <article><span id="stat-tokens">0</span><small>content tokens</small></article>
+        <article><span id="stat-roots">0</span><small>indexed roots</small></article>
       </section>
-
-      <section class="stats" aria-label="扫描统计">
-        <article><span>扫描文件</span><strong id="stat-total">—</strong><small>当前筛选范围</small></article>
-        <article><span>准备整理</span><strong id="stat-ready">—</strong><small>预览后才会执行</small></article>
-        <article><span>重复文件组</span><strong id="stat-duplicates">—</strong><small id="stat-savings">按内容确认一致</small></article>
-        <article><span>待处理冲突</span><strong id="stat-conflict">—</strong><small>始终避免覆盖原文件</small></article>
-      </section>
-
-      <section id="view-organize" class="view">
-        <div class="workspace">
-          <aside class="rules-panel panel">
-            <div class="panel-title"><h2>整理规则</h2><button id="reset" class="text-button">重置</button></div>
-            <label for="template-select">快速应用模板</label>
-            <select id="template-select"><option value="">选择一个模板…</option></select>
-            <div class="divider"></div>
-            <div class="section-title"><span class="step">1</span><h3>分类方式</h3></div>
-            <label for="classify" class="sr-only">分类方式</label>
-            <select id="classify">
-              <option value="type">按文件类型</option>
-              <option value="month">按修改月份</option>
-              <option value="type_month">文件类型 / 修改月份</option>
-              <option value="custom">自定义分类规则</option>
-              <option value="none">保持原文件夹</option>
-            </select>
-            <div id="category-editor" hidden>
-              <p class="small muted">从上往下匹配，首条命中生效。</p>
-              <div id="category-list"></div>
-              <button id="add-category" class="dashed">＋ 添加分类规则</button>
-            </div>
-            <div class="divider"></div>
-            <div class="section-title"><span class="step">2</span><h3>批量命名</h3></div>
-            <p class="small muted">规则按顺序执行，默认保留扩展名。</p>
-            <div id="rule-list"></div>
-            <button id="add-rule" class="dashed">＋ 添加命名规则</button>
-            <div class="two-columns">
-              <label>起始编号<input id="sequence-start" type="number" min="0" max="1000000" value="1"></label>
-              <label>补零位数<input id="sequence-width" type="number" min="1" max="8" value="3"></label>
-            </div>
-            <div class="divider"></div>
-            <div class="section-title"><span class="step">3</span><h3>范围与冲突</h3></div>
-            <label for="sort">编号顺序</label>
-            <select id="sort">
-              <option value="name">文件名 · 自然排序</option>
-              <option value="path">原路径</option>
-              <option value="month">修改月份</option>
-              <option value="size">文件大小 · 从小到大</option>
-            </select>
-            <label for="conflict">目标名称冲突时</label>
-            <select id="conflict">
-              <option value="skip">跳过冲突文件</option>
-              <option value="number">自动追加 (2)、(3)…</option>
-            </select>
-            <details>
-              <summary>扫描筛选</summary>
-              <label class="checkbox-label"><input id="recursive" type="checkbox" checked>包含子文件夹</label>
-              <label class="checkbox-label"><input id="hidden-files" type="checkbox">包含以点开头的文件</label>
-              <label for="extensions">仅扫描扩展名</label>
-              <input id="extensions" placeholder="例如 jpg, png, pdf；留空为全部">
-              <label for="exclude">排除目录（相对路径）</label>
-              <input id="exclude" placeholder="例如 备份, 工作/归档">
-              <p class="small muted">修改筛选后需要重新扫描。内部目录、链接和重复隔离目录会自动跳过。</p>
-            </details>
-            <button id="save-template" class="secondary full-width">保存为我的模板</button>
-          </aside>
-
-          <section class="preview-panel panel">
-            <div class="panel-title">
-              <div><h2>整理预览 <span id="row-count" class="muted small"></span></h2><p class="small muted" id="preview-hint">扫描后配置规则，查看文件将去往哪里。</p></div>
-              <button id="preview" class="secondary" disabled>更新预览</button>
-            </div>
-            <div class="table-tools">
-              <input id="search" type="search" placeholder="搜索文件名或路径…" aria-label="搜索文件">
-              <select id="status-filter" aria-label="按状态筛选">
-                <option value="all">全部状态</option>
-                <option value="ready">准备整理</option>
-                <option value="conflict">名称冲突</option>
-                <option value="invalid">需要修正</option>
-                <option value="excluded">已排除</option>
-                <option value="unchanged">无需改变</option>
-              </select>
-            </div>
-            <div id="empty-state" class="empty-state">
-              <div class="empty-illustration"><span>▤</span><span>▧</span><span>▱</span></div>
-              <h3>从一个文件夹开始</h3>
-              <p>选中你的下载目录、照片或课程资料。<br>先看看，再整理。</p>
-              <div class="empty-steps"><span>01 扫描</span><span>02 预览</span><span>03 整理</span></div>
-            </div>
-            <div id="table-wrap" class="table-wrap" hidden>
-              <table>
-                <thead><tr><th><input id="select-all" type="checkbox" checked aria-label="选择或排除全部文件"></th><th>原文件</th><th>整理后的位置</th><th>状态</th></tr></thead>
-                <tbody id="file-rows"></tbody>
-              </table>
-              <div class="pagination"><button id="prev-page" class="ghost">上一页</button><span id="page-info"></span><button id="next-page" class="ghost">下一页</button></div>
-            </div>
-            <div class="preview-footer">
-              <div class="export-actions"><button id="export-csv" class="text-button" disabled>导出 CSV</button><button id="export-json" class="text-button" disabled>JSON</button><button id="export-md" class="text-button" disabled>Markdown</button></div>
-              <button id="execute" class="primary" disabled>执行整理 <span>→</span></button>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section id="view-duplicates" class="view panel" hidden>
-        <div class="panel-title"><div><h2>相同内容，只留需要的副本</h2><p class="muted small">勾选待隔离副本，每组至少保留一份。文件会移入“重复文件隔离”，可以撤销。</p></div><button id="duplicate-preview" class="secondary">加入整理预览</button></div>
-        <div id="duplicate-list" class="card-list"><p class="placeholder">扫描文件夹后，这里会展示内容相同的文件。</p></div>
-      </section>
-
-      <section id="view-history" class="view panel" hidden>
-        <div class="panel-title"><div><h2>每一次整理，都可以回看</h2><p class="muted small">撤销前会检查内容和原位置。修改过的文件不会被强行恢复。</p></div><button id="refresh-history" class="secondary">刷新记录</button></div>
-        <div id="history-list" class="card-list"><p class="placeholder">选择并扫描文件夹，查看它的操作记录。</p></div>
-      </section>
-
-      <section id="view-templates" class="view panel" hidden>
-        <div class="panel-title"><div><h2>把常用规则，留给下一次</h2><p class="muted small">模板保存在当前工作文件夹中，不包含本次勾选的文件。</p></div></div>
-        <div id="template-cards" class="template-grid"></div>
-      </section>
-
-      <details id="warnings-panel" hidden><summary>扫描中跳过的项目</summary><ul id="warnings"></ul></details>
-      <footer class="main-footer"><span>FileNest · 给文件一个合适的位置</span><span>预览优先 / 不覆盖 / 可追溯</span></footer>
     </main>
-
-    <dialog id="confirm-dialog">
-      <h2>执行这份整理计划？</h2>
-      <p id="confirm-description"></p>
-      <p class="muted">冲突文件会跳过。完成后可以在操作历史中撤销。</p>
-      <div class="dialog-actions"><button id="cancel-execute" class="secondary">再看看</button><button id="confirm-execute" class="primary">确认执行</button></div>
-    </dialog>
-    <dialog id="undo-dialog">
-      <h2>恢复这次整理？</h2>
-      <p id="undo-description"></p>
-      <p class="muted">恢复前会检查文件内容和原位置，不会覆盖后来新增或改动的文件。</p>
-      <div class="dialog-actions"><button id="cancel-undo" class="secondary">取消</button><button id="confirm-undo" class="primary">确认恢复</button></div>
-    </dialog>
-    <dialog id="template-dialog">
-      <h2>保存这套整理规则</h2>
-      <label for="template-name">模板名称</label>
-      <input id="template-name" maxlength="40" placeholder="例如：每月课程资料整理">
-      <div class="dialog-actions"><button id="cancel-template" class="secondary">取消</button><button id="confirm-template" class="primary">保存模板</button></div>
-    </dialog>
+    <footer><span>MoonSeek 0.1.0</span><span>Index locally · search instantly · powered by MoonBit</span></footer>
   </body>
 </html>

@@ -28,11 +28,11 @@ pub async fn write_text(path : String, content : String) -> Unit {
 pub async fn resolve_root(input : String) -> String {
   let root = @fs.realpath(input)
   guard @fs.kind(root, follow_symlink=false) is Directory else {
-    fail("请选择文件夹")
+    fail("choose a directory")
   }
   let trimmed = root.trim_end(chars=['/', '\\'])
   guard trimmed.length() > 2 else {
-    fail("请选具体文件夹，不要选整个磁盘")
+    fail("choose a specific directory instead of an entire drive")
   }
   trimmed.to_owned()
 }
@@ -40,5 +40,5 @@ pub async fn resolve_root(input : String) -> String {
 ///|
 /// A native smoke test also exercises import linkage to the deterministic core.
 pub fn core_probe() -> String {
-  @core.configuration_defaults_json("{}")
+  @core.tokenize_search_json("{\"text\":\"MoonSeek\"}")
 }

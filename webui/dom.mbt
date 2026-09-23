@@ -8,16 +8,8 @@ extern "js" fn dom_value(id : String) -> String =
   #|}
 
 ///|
-extern "js" fn dom_checked(id : String) -> Bool =
-  #|(id) => Boolean(document.getElementById(id)?.checked)
-
-///|
 extern "js" fn dom_set_value(id : String, value : String) -> Unit =
   #|(id, value) => { const node = document.getElementById(id); if (node) node.value = value; }
-
-///|
-extern "js" fn dom_set_checked_value(id : String, value : Bool) -> Unit =
-  #|(id, value) => { const node = document.getElementById(id); if (node) node.checked = value; }
 
 ///|
 extern "js" fn dom_text(id : String, value : String) -> Unit =
@@ -48,10 +40,6 @@ extern "js" fn bind_click(id : String, callback : () -> Unit) -> Unit =
   #|(id, callback) => document.getElementById(id)?.addEventListener("click", () => callback())
 
 ///|
-extern "js" fn bind_change(id : String, callback : () -> Unit) -> Unit =
-  #|(id, callback) => document.getElementById(id)?.addEventListener("change", () => callback())
-
-///|
 extern "js" fn bind_delegate(
   id : String,
   callback : (String, String, String) -> Unit,
@@ -75,28 +63,48 @@ extern "js" fn api_request(
   callback : (String) -> Unit,
 ) -> Unit =
   #|(path, body, callback) => {
-  #|  fetch(path, { method: path === "/api/session" ? "GET" : "POST", headers: { "Content-Type": "application/json", "X-FileNest-Token": globalThis.__filenestToken || "" }, body: path === "/api/session" ? undefined : body })
+  #|  fetch(path, { method: path === "/api/session" ? "GET" : "POST", headers: { "Content-Type": "application/json", "X-MoonSeek-Token": globalThis.__moonseekToken || "" }, body: path === "/api/session" ? undefined : body })
   #|    .then(async response => callback(await response.text()))
   #|    .catch(error => callback(JSON.stringify({ error: error.message })));
   #|}
 
 ///|
 extern "js" fn set_api_token(token : String) -> Unit =
-  #|(token) => { globalThis.__filenestToken = token; }
+  #|(token) => { globalThis.__moonseekToken = token; }
 
 ///|
-extern "js" fn save_download(content : String, name : String) -> Unit =
-  #|(content, name) => {
-  #|  const url = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
-  #|  const link = Object.assign(document.createElement("a"), { href: url, download: name });
-  #|  link.click();
-  #|  setTimeout(() => URL.revokeObjectURL(url), 1000);
+extern "js" fn bind_search_input(id : String, callback : () -> Unit) -> Unit =
+  #|(id, callback) => {
+  #|  const node = document.getElementById(id);
+  #|  if (!node) return;
+  #|  let timer = 0;
+  #|  node.addEventListener("input", () => {
+  #|    clearTimeout(timer);
+  #|    timer = setTimeout(() => callback(), 90);
+  #|  });
   #|}
+
+///|
+extern "js" fn bind_global_shortcuts(search_id : String) -> Unit =
+  #|(searchId) => {
+  #|  window.addEventListener("keydown", event => {
+  #|    if ((event.ctrlKey && event.key.toLowerCase() === "k") || (event.key === "/" && document.activeElement?.tagName !== "INPUT")) {
+  #|      event.preventDefault();
+  #|      const node = document.getElementById(searchId);
+  #|      node?.focus();
+  #|      node?.select();
+  #|    }
+  #|  });
+  #|}
+
+///|
+extern "js" fn dom_focus(id : String) -> Unit =
+  #|(id) => document.getElementById(id)?.focus()
+
+///|
+extern "js" fn copy_text(value : String) -> Unit =
+  #|(value) => navigator.clipboard?.writeText(value)
 
 ///|
 extern "js" fn browser_confirm(message : String) -> Bool =
   #|(message) => window.confirm(message)
-
-///|
-extern "js" fn browser_prompt(message : String) -> String =
-  #|(message) => window.prompt(message) || ""

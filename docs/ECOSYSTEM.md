@@ -1,20 +1,17 @@
-# Selection and ecosystem comparison
+# Ecosystem fit
 
-MoonMigrate focuses on versioned changes to an application's on-disk layout.
+MoonSeek is a general local file search engine. Its unit of indexing is a user-selected filesystem root, and its query results are ranked files.
 
-## Adjacent MoonBit tools
+Nearby tool categories solve different problems:
 
-- The official [`moon work`](https://docs.moonbitlang.com/en/latest/toolchain/moon/workspace.html) commands manage MoonBit workspace membership and dependency synchronization.
-- [`moongrep`](https://mooncakes.io/docs/moonbit-community/moongrep) provides structural source search and linting.
-- [`moonmodguard`](https://mooncakes.io/docs/Noverberrain/moonmodguard) audits module manifests and dependency policy.
-- [`moonbit-notary`](https://mooncakes.io/docs/hcjbat/moonbit-notary) creates content evidence manifests and integrity reports.
-- [`moon-ninja`](https://mooncakes.io/docs/Zcxssxx/moon-ninja) models build graphs and incremental execution.
-- [`moon-data-contract`](https://mooncakes.io/docs/lyjttio/moon-data-contract) validates structured data contracts and compatibility.
+| Category | Primary purpose | Difference from MoonSeek |
+| --- | --- | --- |
+| Recursive grep | Exact or regular-expression content scan | Reopens files for each query and usually ignores non-text filenames |
+| File finders | Fast path or filename lookup | Usually do not provide ranked multilingual content search |
+| Source analyzers | Syntax-aware code navigation | Target program structure rather than arbitrary personal files |
+| Document converters | Parse or render one document | Can become future extractors, but do not provide a persistent cross-folder search index |
+| Server search engines | Multi-user, distributed search | Require substantially more deployment and administration |
 
-These tools address workspaces, source analysis, supply-chain policy, integrity evidence, builds, or data schemas. MoonMigrate operates on application-owned files during a version transition and supplies reversible Native execution. The closest familiar category is database migration, applied to directories, configuration, caches, indexes, and resources.
+The closest Mooncakes packages found during project research were a Chinese tokenizer, a structural MoonBit source search tool, and document-conversion libraries. Those are useful adjacent building blocks or specialized applications. None provides MoonSeek's combination of all-file filename indexing, selected-root persistence, mixed CJK/English full-text search, incremental reuse, fuzzy filename ranking, filters, local UI, and index diagnostics.
 
-## Why it belongs in the ecosystem
-
-MoonBit's async filesystem package supplies low-level primitives such as read, write, rename, remove, and locks. An application upgrade still has to define version continuity, validate expected old state, prevent replacement, persist progress, store backups, and reverse completed work. MoonMigrate packages those repeated concerns into a tested core and CLI that other MoonBit applications can call.
-
-The project is an original implementation. It depends on `moonbitlang/async` and uses no source code from the adjacent projects above.
+MoonSeek avoids bundling or copying those projects. Its tokenizer, inverted index, query parser, ranker, filesystem repository, ignore matcher, server, and UI are implemented in this repository. See [PROVENANCE.md](PROVENANCE.md).

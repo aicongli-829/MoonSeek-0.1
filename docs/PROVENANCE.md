@@ -1,25 +1,9 @@
-# Provenance and dependencies
+# Source provenance
 
-MoonMigrate is an original versioned filesystem migration framework implemented in this repository with AI-assisted development. It does not copy source code from the adjacent tools listed in [ECOSYSTEM.md](ECOSYSTEM.md).
+MoonSeek is an original local search engine implemented in this repository with AI-assisted development. It does not copy source code from adjacent Mooncakes projects or desktop search applications.
 
-## Runtime dependencies
+The implementation consists of hand-written MoonBit for tokenization, query parsing, filters, file classification, index construction, ranking, fuzzy matching, snippets, facets, suggestions, diagnostics, ignore rules, Native filesystem access, atomic persistence, CLI and HTTP handling, and browser UI rendering. HTML and CSS provide the web shell. Generated build output and downloaded dependencies are excluded from version control and source-size reporting.
 
-- The official MoonBit toolchain and `moonbitlang/core` provide compilation, JSON, strings, and collections.
-- `moonbitlang/async` provides Native filesystem and environment primitives.
+The repository previously explored local file organization and filesystem migration concepts. Those implementation files, commands, examples, and product documentation were removed when the project direction changed. Git history is retained for transparency; the current submitted product is MoonSeek.
 
-The primary CLI has no Node.js, npm, cloud service, database, or external runtime dependency.
-
-## Project history
-
-The repository began as FileNest, a local file organizer. Its safe paths, SHA-256 implementation, journals, two-stage moves, and rollback experiments became the foundation for MoonMigrate. The organizer remains a secondary regression and visual example; it is not the submitted product direction.
-
-## Code-size policy
-
-Source-size figures count tracked `.mbt` files only. They exclude dependencies, generated output, HTML/CSS, documents, examples, and configuration. Functional scope, readable implementation, and meaningful tests take priority over line count; generated or duplicated code is not used to inflate the project.
-
-## Publication
-
-- GitHub: <https://github.com/aicongli-829/MoonMigrate-v1.0>
-- Mooncakes: not published yet.
-
-The module name is `moonmigrate/core`. The final Mooncakes namespace will be confirmed before registry publication.
+MoonSeek uses the official `moonbitlang/async` package for filesystem, HTTP, socket, and I/O primitives. Dependency versions are declared in `moon.mod` and resolved through Mooncakes.

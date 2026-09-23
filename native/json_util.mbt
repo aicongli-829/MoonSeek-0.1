@@ -25,6 +25,15 @@ fn json_bool(value : Json, key : String, fallback : Bool) -> Bool {
 }
 
 ///|
+fn json_int64_or(value : Json, key : String, fallback : Int64) -> Int64 {
+  match json_field(value, key) {
+    Number(number, ..) => number.to_int64()
+    String(text) => @string.parse_int64(text) catch { _ => fallback }
+    _ => fallback
+  }
+}
+
+///|
 fn json_strings(value : Json, key : String) -> Array[String] {
   match json_field(value, key) {
     Array(values) =>
@@ -54,7 +63,7 @@ fn json_error(message : String) -> String {
 ///|
 fn parse_document(source : String, label : String) -> Json raise {
   @json.parse(source) catch {
-    _ => fail(label + "不是合法 JSON")
+    _ => fail(label + " is not valid JSON")
   }
 }
 

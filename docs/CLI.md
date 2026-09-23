@@ -1,53 +1,57 @@
-# MoonMigrate CLI reference
+# CLI reference
 
-Run commands from the repository root:
-
-```sh
-moon run --target native cmd/moonmigrate -- <command> [arguments]
+```text
+moon run --target native cmd/moonseek -- <command> [arguments]
 ```
 
-Paths may use forward slashes or quoted native separators. Commands print structured JSON so installers and application launchers can consume the result.
+The default database is `.moonseek/index.json`. Every command accepts `--database PATH`.
 
-## Plan
+## Add or update a root
 
-```sh
-moon run --target native cmd/moonmigrate -- migrate-plan ROOT --manifest migrations.json
-moon run --target native cmd/moonmigrate -- migrate-plan ROOT --manifest migrations.json --to 2
+```text
+moonseek index add FOLDER
+moonseek index add FOLDER --ext md,txt,mbt
 ```
 
-`migrate-plan` reads the installed state, resolves a contiguous version route, validates all manifest steps, and checks the real filesystem. It does not modify the root.
+The first form indexes filenames for every regular file and content for recognized text formats. `--ext` restricts the entire scan to the listed extensions. Repeating the command incrementally reuses unchanged entries.
 
-## Apply
+## Remove a root
 
-```sh
-moon run --target native cmd/moonmigrate -- migrate-apply ROOT --manifest migrations.json --yes
-moon run --target native cmd/moonmigrate -- migrate-apply ROOT --manifest migrations.json --to 2 --yes
+```text
+moonseek index remove FOLDER
 ```
 
-Apply requires the explicit `--yes` flag. It repeats preflight under an exclusive lock, writes a journal before mutation, records every action phase, and advances the installed version only after all steps complete.
+This removes the root from the index and does not modify the source folder.
 
-Without `--yes`, the command prints the preview and exits without applying it.
+## Search
 
-## Status
-
-```sh
-moon run --target native cmd/moonmigrate -- migrate-status ROOT
+```text
+moonseek search QUERY --limit 50
 ```
 
-The result contains the project identity, installed version, and history records under `.moonmigrate`.
+Quote a multiword query at the shell level when necessary. Query operators include `ext:`, `type:`, `path:`, `root:`, `size:`, `modified:`, negative `-term`, and quoted phrases. The limit is clamped to 1–200.
 
-## Rollback
+## Suggestions
 
-```sh
-moon run --target native cmd/moonmigrate -- migrate-rollback ROOT BATCH-ID --yes
+```text
+moonseek suggest PREFIX --limit 12
 ```
 
-Rollback visits actions in reverse order and restores the previous version. A completed batch can only roll back while its target remains installed; this prevents an older batch from crossing newer migrations.
+Suggestions combine matching filenames, frequent indexed terms, extensions, and semantic categories.
 
-## Exit safety
+## Status and diagnostics
 
-- Manifest paths cannot escape `ROOT` or enter reserved state directories.
-- Existing symbolic links and junctions are rejected.
-- Move and copy targets are never replaced.
-- A running or failed batch blocks the next apply until it is rolled back.
-- Keep `.moonmigrate` with the application data until its rollback window closes.
+```text
+moonseek status
+moonseek doctor
+```
+
+`status` reports indexed roots and totals. `doctor` verifies format version, document identity, posting bounds and counts, deterministic term order, categories, and aggregate statistics.
+
+## Web interface
+
+```text
+moonseek serve --port 4173
+```
+
+The port must be between 1024 and 65535. The server listens on `127.0.0.1` and prints the local URL. Press Ctrl+C to stop it.

@@ -1,44 +1,37 @@
-# MoonMigrate necessity and value
+# Necessity and value
 
-## The repeated problem
+## The recurring problem
 
-Applications evolve more than executable code. New releases relocate settings, split data directories, rename cache keys, seed new resources, and retire incompatible indexes. Teams frequently implement these changes as one-off shell or application-startup scripts.
+People remember a phrase, a topic, or part of a filename more often than they remember an exact folder. Their files are spread across notes, source repositories, exported chat records, logs, course material, removable drives, and archived projects. Opening folders one by one wastes time, while a fresh recursive content search reopens the same files for every query.
 
-Those scripts are deceptively risky because they run against state the developer does not control. A user may skip releases, edit a configuration file, restore only part of a backup, or already have a path that the new version wants. A process can stop after step three of six. Without a version route, preconditions, a journal, and reverse actions, the next launch cannot reliably distinguish old, new, and partially migrated state.
+The problem appears in common workflows:
 
-## Reusable contribution
+1. A developer searches several repositories for an error message, then narrows results to logs or MoonBit source.
+2. A student searches mixed English and Chinese notes without remembering the course folder or exact filename.
+3. A designer remembers “summer holiday” but not whether the image uses spaces, underscores, or a slightly different spelling.
+4. A support engineer searches old text exports and configuration snapshots while excluding generated files and dependency trees.
+5. A user attaches an external drive whose contents are not covered by the operating system's usual index.
 
-MoonMigrate turns that repeated application concern into MoonBit infrastructure:
+These workflows need the same small set of primitives: choose trusted roots, index once, update cheaply, search names and contents together, rank useful matches first, and keep the data local.
 
-| Layer | Contribution |
-|---|---|
-| Deterministic core | Manifest decoding, path rules, version-chain validation, target routing, flattened plans |
-| Native preflight | Real file kinds, occupancy, UTF-8 text conditions, optional SHA-256 checks |
-| Executor | Non-overwriting operations, lock, backups, quarantine, per-step phases |
-| Recovery | Installed-version state, interrupted-journal detection, reverse rollback |
-| Interface | Native CLI plus JSON API for installers and MoonBit applications |
+## What MoonSeek contributes
 
-The same mechanism applies to desktop software, plugins, local services, CLI caches, indexes, project templates, and asset pipelines. It is independent of any one folder taxonomy or UI.
+MoonSeek implements those primitives as reusable MoonBit packages rather than a thin wrapper over an external search executable.
 
-## Executable evidence
+- The tokenizer handles ASCII words, numbers, CJK characters, and adjacent CJK pairs.
+- The index builder creates deterministic document and posting tables.
+- The search engine uses term rarity, document-length normalization, and separate filename, path, and content weights.
+- Filename fuzzy matching recovers prefixes, subsequences, word initials, and short edit errors.
+- The query language composes text with extension, category, path, root, size, modification, phrase, and exclusion filters.
+- The Native adapter indexes every filename, reads recognized text safely, respects ignore rules, and reuses unchanged documents.
+- The same core compiles for Native and JavaScript and exposes stable JSON functions for other MoonBit programs.
 
-The Native integration test creates an isolated application directory and executes:
+## Why it belongs in the MoonBit ecosystem
 
-1. a versioned directory creation;
-2. a legacy-file move;
-3. a binary copy;
-4. a new version marker write;
-5. an existing configuration replacement with backup;
-6. obsolete-file quarantine.
+MoonBit has filesystem primitives and language-specific code tools, but a general local search engine also needs tokenization, persisted postings, ranking, query filters, incremental reuse, diagnostics, and a usable interface. MoonSeek provides this middle layer in MoonBit. Other projects can import the portable core for documentation search, editor search, offline knowledge bases, static-site search, or application-specific asset catalogs.
 
-It verifies version 1, then rolls the batch back and checks that original contents and locations are restored and created files are gone. Core tests separately cover broken chains, non-boundary targets, unsafe paths, and deterministic plan output.
+The project also exercises MoonBit in a practical desktop workload: recursive Native I/O, deterministic data processing, HTTP, JavaScript interop, multilingual text, and real filesystem integration tests.
 
-Run the evidence with:
+## Verifiable scope
 
-```sh
-moon test --target native
-```
-
-## Scope boundary
-
-MoonMigrate is not a database migration engine and does not interpret application schemas. It supplies the filesystem transition layer on which an application-specific migrator can depend. Current format version 1 is linear and file-oriented; branched histories, structured document transforms, and database coordination remain future work.
+Version 0.1 makes bounded claims. It supports up to 100,000 regular files in selected roots and stores one local JSON index. Binary office files, PDFs, images, audio, and archives are searchable by filename and path; their internal content is not extracted. The project does not claim to replace enterprise search or an operating-system shell. Its value is a transparent, portable, local search core and an immediately usable personal tool.

@@ -1,7 +1,6 @@
 ///|
 let reserved_directories : Array[String] = [
-  ".git", ".filenest", ".moonmigrate", ".tools", ".mooncakes", "_build", "target",
-  "node_modules", "重复文件隔离",
+  ".git", ".moonseek", ".tools", ".mooncakes", "_build", "target", "node_modules",
 ]
 
 ///|
@@ -12,15 +11,6 @@ fn slash_path(path : String) -> String {
 ///|
 fn clean_relative(path : String) -> String {
   slash_path(path).trim(chars=['/']).to_owned()
-}
-
-///|
-fn base_name(path : String) -> String {
-  let clean = slash_path(path)
-  match clean.rev_find("/") {
-    Some(index) => clean[index + 1:].to_owned()
-    None => clean
-  }
 }
 
 ///|
@@ -59,18 +49,18 @@ fn validate_relative(
 ) -> Array[String] raise {
   let clean = slash_path(relative)
   guard clean != "" && !clean.has_prefix("/") else {
-    fail("不安全的相对路径")
+    fail("unsafe relative path")
   }
   guard !(clean.length() >= 2 && clean[1] == ':') else {
-    fail("不安全的相对路径")
+    fail("unsafe relative path")
   }
   let pieces = [ for piece in clean.split("/") => piece.to_owned() ]
   guard !pieces.any(piece => piece == "" || piece == "." || piece == "..") else {
-    fail("路径不能包含空段、. 或 ..")
+    fail("a path cannot contain empty, dot, or parent segments")
   }
   if !internal &&
     pieces.any(piece => reserved_directories.contains(piece.to_lower())) {
-    fail("不能操作保留目录")
+    fail("reserved directories cannot be accessed")
   }
   pieces
 }
@@ -88,10 +78,12 @@ pub async fn safe_native_path(
     if @fs.exists(current) {
       let kind = @fs.kind(current, follow_symlink=false)
       guard kind != SymLink else {
-        fail("不处理符号链接或目录联接")
+        fail("symbolic links and directory junctions are not supported")
       }
       if index < pieces.length() - 1 {
-        guard kind is Directory else { fail("父路径不是文件夹") }
+        guard kind is Directory else {
+          fail("a parent path is not a directory")
+        }
       }
     }
   }

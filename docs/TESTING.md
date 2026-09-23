@@ -1,52 +1,35 @@
-# Testing and troubleshooting
+# Testing
 
-## Complete verification
+## Automated checks
 
-```sh
-moon update
+```text
 moon fmt --check
-moon check --target native
+moon check --target js --deny-warn
+moon test --target js
+moon check --target native --deny-warn
 moon test --target native
-moon build cmd/moonmigrate --target native --release
+moon build cmd/moonseek --target native --release
 ```
 
-The Native suite covers manifest validation, version routing, path safety, SHA-256, real filesystem operations, installed state, journals, and complete rollback. JavaScript checks remain in CI as regression coverage for the portable core and visual transaction example.
+Core tests cover tokenization, query parsing, categories, byte ranges, fuzzy scoring, ranking, phrase and exclusion behavior, facets, suggestions, formatting, and malformed index detection.
+
+Native tests create real temporary directories and cover filename and content indexing, binary metadata indexing, incremental reuse, combined filters, multiple roots, root removal, `.moonseekignore`, persisted diagnostics, and suggestions. Temporary data is removed after each test.
 
 ## Manual smoke test
 
-Create a disposable directory and copy `examples/moonmigrate.json`. Add only synthetic files that match the optional examples, then run:
+Create a disposable folder containing a text file, a source file, and a small image. Then run:
 
-```sh
-moon run --target native cmd/moonmigrate -- migrate-plan ./smoke --manifest examples/moonmigrate.json
-moon run --target native cmd/moonmigrate -- migrate-apply ./smoke --manifest examples/moonmigrate.json --yes
-moon run --target native cmd/moonmigrate -- migrate-status ./smoke
-moon run --target native cmd/moonmigrate -- migrate-rollback ./smoke BATCH-ID --yes
+```text
+moon run --target native cmd/moonseek -- index add ./smoke
+moon run --target native cmd/moonseek -- status
+moon run --target native cmd/moonseek -- search "sample"
+moon run --target native cmd/moonseek -- search "type:image"
+moon run --target native cmd/moonseek -- doctor
+moon run --target native cmd/moonseek -- serve
 ```
 
-Confirm that planning changes nothing, apply reaches version 2, rollback restores original contents, and migration-created files and empty directories disappear.
-
-## Common failures
-
-### Registry dependency not found
-
-Run `moon update`. A fresh toolchain may not yet have a current Mooncakes registry index.
-
-### Native compiler is unavailable
-
-Install the platform C toolchain. Windows uses Visual Studio Build Tools with the C++ workload; Linux and macOS use a supported system compiler.
-
-### A migration lock remains
-
-Confirm that no MoonMigrate process is running. Inspect `.moonmigrate/history` before removing `.moonmigrate/lock`. Never remove an active lock to run two migrations at once.
-
-### Apply reports an unfinished batch
-
-Inspect the batch shown by `migrate-status`, then use `migrate-rollback ROOT BATCH-ID --yes`. A later apply is intentionally blocked until the partial transition is resolved.
-
-### A hash or text precondition fails
-
-The installed file no longer matches the expected old release. Do not bypass the check automatically. Review the user-modified content and create an explicit migration path when appropriate.
+Index the folder a second time and confirm that unchanged files appear in the `reused` count. Open the printed local URL and verify keyboard focus, live search, filters, path copying, root removal, and status refresh.
 
 ## Reporting failures
 
-Include the operating system, MoonBit version, command, synthetic directory layout, sanitized manifest, and smallest relevant output. Never upload real application data, access tokens, absolute home paths, `.moonmigrate` backups, or private journals.
+Include the operating system, MoonBit version, command, sanitized directory layout, expected result, and actual JSON response. Do not attach the real `.moonseek/index.json` database when it contains private filenames or excerpts.

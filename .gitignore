@@ -3,7 +3,7 @@
 _build/
 target/
 node_modules/
-.filenest/
+.moonseek/
 .scratch/
 .private/
 dist/

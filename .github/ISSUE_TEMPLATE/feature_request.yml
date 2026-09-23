@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a practical MoonMigrate workflow or improvement
+description: Propose a practical MoonSeek workflow or improvement
 title: "[Feature]: "
 labels:
   - enhancement
@@ -8,14 +8,14 @@ body:
     id: problem
     attributes:
       label: Problem to solve
-      description: Describe the application-data upgrade or recovery task that is difficult today.
+      description: Describe the file discovery, indexing, or local search task that is difficult today.
     validations:
       required: true
   - type: textarea
     id: workflow
     attributes:
       label: Example workflow
-      description: Show a small before-and-after directory or command example.
+      description: Show a small directory, index, or query example.
     validations:
       required: true
   - type: textarea
@@ -29,20 +29,20 @@ body:
     attributes:
       label: Preferred interface
       options:
-        - Manifest and version planning
-        - Native execution and recovery
+        - Indexing and ignore rules
+        - Query parsing and ranking
         - Native CLI
         - Library API
+        - Local web interface
         - Documentation or examples
     validations:
       required: true
   - type: checkboxes
     id: guarantees
     attributes:
-      label: Safety guarantees
+      label: Quality guarantees
       description: Select guarantees relevant to the proposal.
       options:
-        - label: Preview before execution
-        - label: Never overwrite an existing target
-        - label: Journal and rollback support
-        - label: Deterministic output
+        - label: Indexed source files remain read-only
+        - label: Search output stays deterministic
+        - label: Private paths and content stay local

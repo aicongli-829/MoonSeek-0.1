@@ -1,32 +1,25 @@
-# MoonMigrate roadmap
+# Roadmap
 
-## 0.3 · Working migration engine
+## 0.1 · Search core
 
-- [x] Versioned JSON manifest and contiguous-chain planning.
-- [x] Native dry-run with filesystem preconditions.
-- [x] Directory, move, copy, write, replace, and quarantine steps.
-- [x] Durable state, per-step journal, backups, and reverse rollback.
-- [x] Real-filesystem integration test for apply and rollback.
-- [x] Dedicated `moonmigrate` Native executable.
+- [x] All-file filename and path indexing.
+- [x] Text and source content indexing.
+- [x] Mixed English, numeric, and CJK tokenization.
+- [x] Incremental reuse of unchanged documents.
+- [x] Ranked search, fuzzy filenames, filters, facets, and suggestions.
+- [x] Multiple roots and `.moonseekignore` support.
+- [x] Native CLI, loopback web interface, and index diagnostics.
 
-## 0.4 · Recovery and authoring
+## 0.2 · Faster updates
 
-- [ ] Add explicit resume and reconcile commands for interrupted steps.
-- [ ] Generate new manifests with an `init` command.
-- [ ] Publish a JSON Schema and editor completion metadata.
-- [ ] Add step-level postconditions and a first-occurrence replace mode.
-- [ ] Add machine-readable plan output modes for installer integration.
+- [ ] Filesystem watcher with debounced update batches.
+- [ ] Deleted-file tombstones without a full root scan.
+- [ ] Configurable indexing profiles per root.
+- [ ] Search latency and index throughput benchmark suite.
 
-## 0.5 · Cross-platform confidence
+## 0.3 · Rich content
 
-- [ ] Run migration integration tests on Windows, Linux, and macOS in CI.
-- [ ] Test permission failures, disk exhaustion, and process interruption.
-- [ ] Add backup retention and garbage-collection commands.
-- [ ] Benchmark manifests with thousands of steps.
-
-## 1.0 · Stable library
-
-- [ ] Freeze manifest format version 1 and CLI compatibility.
-- [ ] Publish the reusable core and Native packages to Mooncakes.
-- [ ] Publish signed release archives and checksums.
-- [ ] Complete recovery, security, and documentation reviews.
+- [ ] Pluggable content extractors for PDF and office documents.
+- [ ] Optional image metadata and OCR adapters.
+- [ ] Segmented binary index for collections beyond 100,000 files.
+- [ ] Editor and launcher integrations using the portable JSON API.

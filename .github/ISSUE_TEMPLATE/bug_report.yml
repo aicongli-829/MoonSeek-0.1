@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect migration planning, execution, state, or rollback behavior
+description: Report incorrect indexing, ranking, filtering, or local UI behavior
 title: "[Bug]: "
 labels:
   - bug
@@ -7,11 +7,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping improve MoonMigrate. Use synthetic files and remove private paths, configuration values, backups, and journal content.
+        Thanks for helping improve MoonSeek. Use synthetic files and remove private paths, contents, tokens, and index data.
   - type: input
     id: version
     attributes:
-      label: MoonMigrate commit or version
+      label: MoonSeek commit or version
       placeholder: e.g. 0.3.0 or a commit SHA
     validations:
       required: true
@@ -28,11 +28,11 @@ body:
     attributes:
       label: Affected area
       options:
-        - Manifest validation and version routing
-        - Filesystem preflight
-        - Apply and journal
-        - Status and rollback
-        - CLI or JSON output
+        - Filesystem scanning and ignore rules
+        - Tokenization and index construction
+        - Ranking, fuzzy match, and filters
+        - Incremental updates and persistence
+        - CLI, HTTP API, or web interface
         - Build and documentation
     validations:
       required: true
@@ -40,7 +40,7 @@ body:
     id: reproduction
     attributes:
       label: Minimal reproduction
-      description: Describe the synthetic directory, sanitized manifest, command, and steps.
+      description: Describe the synthetic directory, query, command, and steps.
     validations:
       required: true
   - type: textarea
@@ -60,5 +60,5 @@ body:
     attributes:
       label: Safety check
       options:
-        - label: I removed private files, configuration values, access tokens, personal paths, and real `.moonmigrate` state.
+        - label: I removed private files, contents, access tokens, personal paths, and real `.moonseek` state.
           required: true

@@ -1,6 +1,6 @@
 ## Problem and result
 
-Describe the concrete MoonMigrate workflow that was incorrect, missing, or difficult, followed by the resulting behavior.
+Describe the concrete MoonSeek indexing or search workflow that was incorrect, missing, or difficult, followed by the resulting behavior.
 
 ## Changes
 
@@ -8,21 +8,21 @@ Describe the concrete MoonMigrate workflow that was incorrect, missing, or diffi
 
 ## Validation
 
-List the commands and manual workflows used to verify the change. For file operations, use a disposable directory and include apply/undo coverage when relevant.
+List the commands and manual workflows used to verify the change. Use a disposable directory for filesystem tests.
 
 ```text
 moon fmt --check
-moon check --target native
+moon check --target native --deny-warn
 moon test --target native
-moon build cmd/moonmigrate --target native --release
+moon build cmd/moonseek --target native --release
 ```
 
-## Safety review
+## Review checklist
 
-- [ ] Plans remain deterministic for identical inputs.
-- [ ] Existing destination files are never overwritten.
-- [ ] New file operations are journaled and can be audited.
-- [ ] Apply and rollback revalidate affected files.
-- [ ] Tests and examples use synthetic data without private paths.
+- [ ] Search output remains deterministic for identical inputs.
+- [ ] Indexed source files are never modified.
+- [ ] Index format changes are versioned and diagnosed.
+- [ ] Native changes have temporary-directory coverage.
+- [ ] Tests and examples use synthetic data without private paths or content.
 
 Remove checks that do not apply and explain any intentional limitation.

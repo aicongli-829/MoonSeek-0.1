@@ -1,5 +1,6 @@
 import {
   "moonbitlang/core/json",
+  "moonbitlang/core/math",
   "moonbitlang/core/string",
 }
 
@@ -7,23 +8,15 @@ options(
   link: {
     "js": {
       "exports": [
-        "plan_json",
-        "plan_bundle_json",
-        "natural_compare",
-        "report_json",
-        "duplicate_candidates_json",
-        "transaction_prepare_json",
-        "transaction_undo_plan_json",
-        "transaction_phase_json",
-        "analyze_inventory_json",
-        "create_snapshot_json",
-        "compare_snapshot_json",
-        "parse_rules_json",
-        "validate_options_json",
-        "validate_template_json",
-        "configuration_defaults_json",
-        "duplicate_advice_json",
-        "migration_plan_json",
+        "build_search_index_json",
+        "search_index_json",
+        "tokenize_search_json",
+        "file_type_catalog_json",
+        "fuzzy_score_json",
+        "validate_search_index_json",
+        "suggest_search_json",
+        "format_file_size_json",
+        "search_query_help_json",
       ],
       "format": "esm",
     },
