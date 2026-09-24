@@ -63,39 +63,15 @@ extern "js" fn api_request(
   callback : (String) -> Unit,
 ) -> Unit =
   #|(path, body, callback) => {
-  #|  fetch(path, { method: path === "/api/session" ? "GET" : "POST", headers: { "Content-Type": "application/json", "X-MoonSeek-Token": globalThis.__moonseekToken || "" }, body: path === "/api/session" ? undefined : body })
+  #|  const isSession = path === "/__moonreplay/api/session";
+  #|  fetch(path, { method: isSession ? "GET" : "POST", headers: { "Content-Type": "application/json", "X-MoonReplay-Token": globalThis.__moonreplayToken || "" }, body: isSession ? undefined : body })
   #|    .then(async response => callback(await response.text()))
   #|    .catch(error => callback(JSON.stringify({ error: error.message })));
   #|}
 
 ///|
 extern "js" fn set_api_token(token : String) -> Unit =
-  #|(token) => { globalThis.__moonseekToken = token; }
-
-///|
-extern "js" fn bind_search_input(id : String, callback : () -> Unit) -> Unit =
-  #|(id, callback) => {
-  #|  const node = document.getElementById(id);
-  #|  if (!node) return;
-  #|  let timer = 0;
-  #|  node.addEventListener("input", () => {
-  #|    clearTimeout(timer);
-  #|    timer = setTimeout(() => callback(), 90);
-  #|  });
-  #|}
-
-///|
-extern "js" fn bind_global_shortcuts(search_id : String) -> Unit =
-  #|(searchId) => {
-  #|  window.addEventListener("keydown", event => {
-  #|    if ((event.ctrlKey && event.key.toLowerCase() === "k") || (event.key === "/" && document.activeElement?.tagName !== "INPUT")) {
-  #|      event.preventDefault();
-  #|      const node = document.getElementById(searchId);
-  #|      node?.focus();
-  #|      node?.select();
-  #|    }
-  #|  });
-  #|}
+  #|(token) => { globalThis.__moonreplayToken = token; }
 
 ///|
 extern "js" fn dom_focus(id : String) -> Unit =

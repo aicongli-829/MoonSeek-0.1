@@ -16,6 +16,15 @@ fn ui_text(value : Json, key : String, fallback : String) -> String {
 }
 
 ///|
+fn ui_bool(value : Json, key : String, fallback : Bool) -> Bool {
+  match ui_field(value, key) {
+    true => true
+    false => false
+    _ => fallback
+  }
+}
+
+///|
 fn ui_array(value : Json, key : String) -> Array[Json] {
   match ui_field(value, key) {
     Array(items) => items
@@ -30,6 +39,7 @@ fn html_escape(text : String) -> String {
   .replace_all(old="<", new="&lt;")
   .replace_all(old=">", new="&gt;")
   .replace_all(old="\"", new="&quot;")
+  .replace_all(old="'", new="&#39;")
 }
 
 ///|
@@ -48,7 +58,7 @@ fn clear_message() -> Unit {
 fn response(source : String, callback : (Json) -> Unit) -> Unit {
   let document = @json.parse(source) catch {
     _ => {
-      show_message("MoonSeek returned an unreadable response.", true)
+      show_message("MoonReplay returned an unreadable response.", true)
       return
     }
   }
@@ -59,171 +69,318 @@ fn response(source : String, callback : (Json) -> Unit) -> Unit {
 }
 
 ///|
-fn render_status(status : Json) -> Unit {
-  let statistics = ui_field(status, "statistics")
-  let roots = ui_array(status, "roots")
-  dom_text("stat-documents", ui_text(statistics, "documents", "0"))
-  dom_text("stat-terms", ui_text(statistics, "terms", "0"))
-  dom_text("stat-tokens", ui_text(statistics, "tokens", "0"))
-  dom_text("stat-roots", roots.length().to_string())
-  let html = StringBuilder()
-  for root in roots {
-    match root {
-      String(path) => {
-        html.write_string(
-          "<article class=\"root-row\"><span class=\"root-icon\">⌁</span><code>",
-        )
-        html.write_string(html_escape(path))
-        html.write_string(
-          "</code><button data-action=\"remove-root\" data-index=\"",
-        )
-        html.write_string(html_escape(path))
-        html.write_string(
-          "\" title=\"Remove from index\">×</button></article>",
-        )
-      }
-      _ => ()
-    }
+fn status_class(status : String) -> String {
+  let code = @string.parse_int(status) catch { _ => 0 }
+  if code >= 200 && code < 300 {
+    "ok"
+  } else if code >= 400 {
+    "bad"
+  } else {
+    "neutral"
   }
-  if roots.length() == 0 {
-    html.write_string("<p class=\"empty-copy\">No folders indexed yet.</p>")
-  }
-  dom_html("root-list", html.to_string())
 }
 
 ///|
-fn render_results(document : Json) -> Unit {
-  let results = ui_array(document, "results")
+fn render_history(document : Json) -> Unit {
+  let items = ui_array(document, "items")
   let total = ui_text(document, "total", "0")
   dom_text(
-    "result-count",
-    total + (if total == "1" { " match" } else { " matches" }),
+    "history-count",
+    total + (if total == "1" { " exchange" } else { " exchanges" }),
   )
+  dom_text("stat-exchanges", total)
   let html = StringBuilder()
-  for result in results {
-    let root = ui_text(result, "root", "")
-    let path = ui_text(result, "path", "")
-    let full = if root.has_suffix("\\") || root.has_suffix("/") {
-      root + path
-    } else if root.contains("\\") {
-      root + "\\" + path.replace_all(old="/", new="\\")
-    } else {
-      root + "/" + path
-    }
+  for item in items {
+    let id = ui_text(item, "id", "")
+    let verb = ui_text(item, "method", "GET")
+    let path = ui_text(item, "path", "/")
+    let status = ui_text(item, "status", "0")
     html.write_string(
-      "<article class=\"result-card\"><div class=\"file-badge\">",
+      "<button class=\"traffic-row\" data-action=\"open-exchange\" data-index=\"",
     )
-    let extension = ui_text(result, "extension", "FILE").to_upper()
-    let badge = if extension == "" { "FILE" } else { extension }
-    html.write_string(html_escape(badge))
-    html.write_string("</div><div class=\"result-body\"><h2>")
-    html.write_string(html_escape(ui_text(result, "name", path)))
-    html.write_string("</h2><p class=\"result-path\">")
-    html.write_string(html_escape(full))
-    html.write_string("</p><p class=\"snippet\">")
-    html.write_string(html_escape(ui_text(result, "snippet", "")))
-    html.write_string("</p><div class=\"result-meta\"><span>score ")
-    html.write_string(html_escape(ui_text(result, "score", "0")))
-    html.write_string("</span><span>")
-    html.write_string(html_escape(ui_text(result, "matchKind", "match")))
-    html.write_string("</span><span>")
-    html.write_string(html_escape(ui_text(result, "sizeLabel", "0 bytes")))
-    html.write_string(
-      "</span></div></div><button class=\"copy-button\" data-action=\"copy-path\" data-index=\"",
-    )
-    html.write_string(html_escape(full))
-    html.write_string("\">Copy path</button></article>")
+    html.write_string(html_escape(id))
+    html.write_string("\"><span class=\"verb verb-")
+    html.write_string(html_escape(verb.to_lower()))
+    html.write_string("\">")
+    html.write_string(html_escape(verb))
+    html.write_string("</span><span class=\"traffic-path\">")
+    html.write_string(html_escape(path))
+    html.write_string("</span><span class=\"status ")
+    html.write_string(status_class(status))
+    html.write_string("\">")
+    html.write_string(html_escape(status))
+    html.write_string("</span><span class=\"duration\">")
+    html.write_string(html_escape(ui_text(item, "durationMs", "0")))
+    html.write_string(" ms</span></button>")
   }
-  if results.length() == 0 {
+  if items.length() == 0 {
     html.write_string(
-      "<div class=\"empty-results\"><div>⌕</div><h2>No matching files</h2><p>Try fewer words or remove a filter.</p></div>",
+      "<div class=\"empty\"><strong>No requests captured</strong><span>Send an HTTP request to any path on this server.</span></div>",
     )
   }
-  dom_html("results", html.to_string())
+  dom_html("traffic-list", html.to_string())
 }
 
 ///|
-fn refresh_status() -> Unit {
-  api_request("/api/status", "{}", source => response(source, render_status))
+fn render_headers(rows : Array[Json]) -> String {
+  if rows.length() == 0 {
+    return "<p class=\"muted\">No headers</p>"
+  }
+  let html = StringBuilder()
+  html.write_string("<dl class=\"headers\">")
+  for row in rows {
+    html.write_string("<dt>")
+    html.write_string(html_escape(ui_text(row, "name", "")))
+    html.write_string("</dt><dd>")
+    html.write_string(html_escape(ui_text(row, "value", "")))
+    html.write_string("</dd>")
+  }
+  html.write_string("</dl>")
+  html.to_string()
 }
 
 ///|
-fn search_action() -> Unit {
-  let query = dom_value("query").trim().to_owned()
-  if query == "" {
-    dom_html(
-      "results", "<div class=\"empty-results\"><div>⌕</div><h2>Search everything you indexed</h2><p>Type a filename, phrase, or content keyword.</p></div>",
-    )
-    dom_text("result-count", "Ready")
-    return
-  }
-  clear_message()
-  dom_class_toggle("search-shell", "searching", true)
-  api_request(
-    "/api/search",
-    ({ "query": query, "limit": 80 } : Json).stringify(),
-    source => {
-      if dom_value("query").trim().to_owned() != query {
-        return
+fn render_exchange(document : Json) -> Unit {
+  let exchange = ui_field(document, "exchange")
+  let request = ui_field(exchange, "request")
+  let response_value = ui_field(exchange, "response")
+  let id = ui_text(exchange, "id", "")
+  dom_set_value("selected-exchange", id)
+  dom_hidden("exchange-empty", true)
+  dom_hidden("exchange-detail", false)
+  dom_text("detail-method", ui_text(request, "method", "GET"))
+  dom_text(
+    "detail-path",
+    ui_text(request, "target", ui_text(request, "path", "/")),
+  )
+  dom_text("detail-status", ui_text(response_value, "status", "0"))
+  dom_text("detail-mode", ui_text(exchange, "mode", "capture"))
+  dom_text("detail-route", ui_text(exchange, "routeId", "unmatched"))
+  dom_html("request-headers", render_headers(ui_array(request, "headers")))
+  dom_text("request-body", ui_text(request, "body", ""))
+  dom_html(
+    "response-headers",
+    render_headers(ui_array(response_value, "headers")),
+  )
+  dom_text("response-body", ui_text(response_value, "body", ""))
+}
+
+///|
+fn render_routes(workspace : Json) -> Unit {
+  let routes = ui_array(workspace, "routes")
+  dom_text("stat-routes", routes.length().to_string())
+  let html = StringBuilder()
+  for route in routes {
+    let id = ui_text(route, "id", "")
+    let rule = ui_field(route, "match")
+    let response_value = ui_field(route, "response")
+    let methods = ui_array(rule, "methods").filter_map(value => {
+      match value {
+        String(text) => Some(text)
+        _ => None
       }
-      dom_class_toggle("search-shell", "searching", false)
-      response(source, render_results)
-    },
+    })
+    html.write_string("<article class=\"route-row\"><div><strong>")
+    html.write_string(html_escape(ui_text(route, "name", id)))
+    html.write_string("</strong><code>")
+    html.write_string(
+      html_escape(methods.join(", ") + " " + ui_text(rule, "path", "/")),
+    )
+    html.write_string("</code></div><span class=\"status ok\">")
+    html.write_string(html_escape(ui_text(response_value, "status", "200")))
+    html.write_string("</span><button data-action=\"edit-route\" data-index=\"")
+    html.write_string(html_escape(id))
+    html.write_string(
+      "\">Edit</button><button class=\"danger\" data-action=\"remove-route\" data-index=\"",
+    )
+    html.write_string(html_escape(id))
+    html.write_string("\">Remove</button></article>")
+  }
+  if routes.length() == 0 {
+    html.write_string(
+      "<div class=\"empty compact\"><strong>No mock routes yet</strong><span>Add the sample route or paste your own JSON.</span></div>",
+    )
+  }
+  dom_html("route-list", html.to_string())
+}
+
+///|
+fn refresh_history() -> Unit {
+  let verb = dom_value("method-filter")
+  let status = dom_value("status-filter")
+  let path = dom_value("path-filter").trim().to_owned()
+  api_request(
+    "/__moonreplay/api/history",
+    (
+      {
+        "filter": {
+          "methods": if verb == "" {
+            []
+          } else {
+            [verb]
+          },
+          "statuses": if status == "" {
+            []
+          } else {
+            [status]
+          },
+          "path": path,
+          "pathMode": "contains",
+        },
+        "limit": 100,
+      } : Json).stringify(),
+    source => response(source, render_history),
   )
 }
 
 ///|
-fn index_action() -> Unit {
-  let root = dom_value("root").trim().to_owned()
-  if root == "" {
-    show_message("Paste a folder path first.", true)
+fn refresh_session() -> Unit {
+  api_request("/__moonreplay/api/session", "{}", source => {
+    response(source, session => {
+      set_api_token(ui_text(session, "token", ""))
+      render_routes(ui_field(session, "workspace"))
+      render_history(ui_field(session, "history"))
+    })
+  })
+}
+
+///|
+fn open_exchange(id : String) -> Unit {
+  api_request("/__moonreplay/api/exchange", ({ "id": id } : Json).stringify(), source => {
+    response(source, render_exchange)
+  })
+}
+
+///|
+fn replay_selected() -> Unit {
+  let id = dom_value("selected-exchange")
+  let target = dom_value("replay-target").trim().to_owned()
+  if id == "" || target == "" {
+    show_message("Select an exchange and enter an absolute replay URL.", true)
     return
   }
-  dom_disabled("index-button", true)
-  dom_text("index-button", "Indexing…")
-  clear_message()
+  dom_disabled("replay-button", true)
   api_request(
-    "/api/index",
-    ({ "root": root, "options": {} } : Json).stringify(),
+    "/__moonreplay/api/replay",
+    ({ "id": id, "targetUrl": target } : Json).stringify(),
     source => {
-      dom_disabled("index-button", false)
-      dom_text("index-button", "Add folder")
+      dom_disabled("replay-button", false)
       response(source, result => {
-        let scan = ui_field(result, "scan")
+        let difference = ui_field(result, "difference")
+        let count = ui_text(difference, "differenceCount", "0")
         show_message(
-          "Index updated: " +
-          ui_text(scan, "indexed", "0") +
-          " read, " +
-          ui_text(scan, "reused", "0") +
-          " unchanged.",
+          if ui_bool(difference, "equal", false) {
+            "Replay completed: response is identical."
+          } else {
+            "Replay completed: " + count + " response differences found."
+          },
           false,
         )
-        dom_set_value("root", "")
-        refresh_status()
-        dom_focus("query")
+        dom_text("diff-output", difference.stringify(indent=2))
+        dom_hidden("diff-panel", false)
       })
     },
   )
+}
+
+///|
+fn copy_curl() -> Unit {
+  let id = dom_value("selected-exchange")
+  if id == "" {
+    show_message("Select an exchange first.", true)
+    return
+  }
+  api_request("/__moonreplay/api/curl", ({ "id": id } : Json).stringify(), source => {
+    response(source, result => {
+      copy_text(ui_text(result, "command", ""))
+      show_message("cURL command copied.", false)
+    })
+  })
+}
+
+///|
+fn save_route() -> Unit {
+  let source = dom_value("route-json").trim().to_owned()
+  let route = @json.parse(source) catch {
+    _ => {
+      show_message("Route JSON is invalid.", true)
+      return
+    }
+  }
+  api_request(
+    "/__moonreplay/api/route/upsert",
+    ({ "route": route } : Json).stringify(),
+    result => {
+      response(result, _ => {
+        show_message("Mock route saved.", false)
+        refresh_session()
+      })
+    },
+  )
+}
+
+///|
+fn sample_route_source() -> String {
+  (
+    {
+      "id": "order-webhook",
+      "name": "Order webhook",
+      "enabled": true,
+      "priority": 10,
+      "match": {
+        "methods": ["POST"],
+        "path": "/hooks/orders/{orderId}",
+        "pathMode": "template",
+        "headers": [],
+        "query": [],
+        "body": { "mode": "any", "value": "" },
+      },
+      "response": {
+        "status": 202,
+        "headers": [{ "name": "Content-Type", "value": "application/json" }],
+        "body": "{\"accepted\":true,\"orderId\":\"{{path.orderId}}\"}",
+        "delayMs": 0,
+      },
+    } : Json).stringify(indent=2)
 }
 
 ///|
 fn initialize_events() -> Unit {
-  bind_search_input("query", search_action)
-  bind_click("index-button", index_action)
-  bind_click("refresh-button", refresh_status)
-  bind_global_shortcuts("query")
-  bind_delegate("results", (action, path, _) => {
-    if action == "copy-path" {
-      copy_text(path)
-      show_message("Path copied to the clipboard.", false)
+  bind_click("refresh-button", refresh_session)
+  bind_click("filter-button", refresh_history)
+  bind_click("replay-button", replay_selected)
+  bind_click("curl-button", copy_curl)
+  bind_click("save-route-button", save_route)
+  bind_click("sample-route-button", () => {
+    dom_set_value("route-json", sample_route_source())
+  })
+  bind_click("clear-button", () => {
+    if browser_confirm("Clear all captured request history?") {
+      api_request("/__moonreplay/api/history/clear", "{}", source => {
+        response(source, _ => {
+          show_message("Request history cleared.", false)
+          refresh_history()
+        })
+      })
     }
   })
-  bind_delegate("root-list", (action, root, _) => {
-    if action == "remove-root" &&
-      browser_confirm("Remove this folder from the index?") {
-      api_request("/api/root/remove", ({ "root": root } : Json).stringify(), source => {
-        response(source, _ => refresh_status())
-      })
+  bind_delegate("traffic-list", (action, id, _) => {
+    if action == "open-exchange" {
+      open_exchange(id)
+    }
+  })
+  bind_delegate("route-list", (action, id, _) => {
+    if action == "remove-route" && browser_confirm("Remove route '" + id + "'?") {
+      api_request(
+        "/__moonreplay/api/route/remove",
+        ({ "id": id } : Json).stringify(),
+        source => response(source, _ => refresh_session()),
+      )
+    } else if action == "edit-route" {
+      show_message(
+        "Copy the route JSON from the workspace file to edit it safely.", false,
+      )
+      dom_focus("route-json")
     }
   })
 }
@@ -231,11 +388,7 @@ fn initialize_events() -> Unit {
 ///|
 fn main {
   initialize_events()
-  api_request("/api/session", "{}", source => {
-    response(source, session => {
-      set_api_token(ui_text(session, "token", ""))
-      render_status(ui_field(session, "status"))
-      dom_focus("query")
-    })
-  })
+  dom_set_value("route-json", sample_route_source())
+  clear_message()
+  refresh_session()
 }

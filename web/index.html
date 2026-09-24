@@ -4,51 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <meta name="description" content="Fast local filename and full-text search powered by MoonBit.">
-    <title>MoonSeek · Search your files instantly</title>
+    <meta name="description" content="Local HTTP capture, mock, replay, and response-diff workbench powered by MoonBit.">
+    <title>MoonReplay · Reproduce HTTP behavior locally</title>
     <link rel="stylesheet" href="/style.css">
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <div class="glow glow-a"></div><div class="glow glow-b"></div>
     <header class="app-header">
-      <a class="brand" href="/" aria-label="MoonSeek home"><span class="brand-mark">M</span><span>MoonSeek<small>Local search engine</small></span></a>
-      <div class="privacy"><span></span>Local only · nothing is uploaded</div>
+      <a class="brand" href="/"><span class="brand-mark">MR</span><span>MoonReplay<small>HTTP behavior workbench</small></span></a>
+      <div class="local"><span></span>Loopback only · secrets redacted</div>
     </header>
     <main>
       <section class="hero">
-        <p class="eyebrow">MOONBIT NATIVE SEARCH</p>
-        <h1>Find it before you finish typing.</h1>
-        <p>Index filenames and text once, then search every folder instantly.</p>
-        <div id="search-shell" class="search-shell">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input id="query" type="search" autocomplete="off" spellcheck="false" placeholder="Search filenames, paths, and file contents…" aria-label="Search indexed files">
-          <kbd>Ctrl K</kbd>
-        </div>
-        <div class="query-help"><span>Filters:</span><code>ext:md,mbt</code><code>path:docs</code><code>root:notes</code><code>-draft</code></div>
+        <div><p class="eyebrow">MOONBIT NATIVE DEVELOPER TOOL</p><h1>Capture once. Replay exactly.</h1><p>Inspect webhooks, mock APIs, reproduce failures, and compare responses without sending traffic to a cloud service.</p></div>
+        <div class="quick-start"><span>Listening on</span><code>http://127.0.0.1:4173/&lt;any-path&gt;</code><button id="refresh-button">Refresh</button></div>
       </section>
-      <section class="dashboard">
-        <aside class="control-panel">
-          <div class="panel-heading"><div><p class="eyebrow">INDEX</p><h2>Search locations</h2></div><button id="refresh-button" class="icon-button" title="Refresh">↻</button></div>
-          <label for="root">Add a folder</label>
-          <div class="add-folder"><input id="root" placeholder="C:\Users\you\Documents" autocomplete="off"><button id="index-button">Add folder</button></div>
-          <p class="hint">Text, Markdown, source code, logs, CSV, HTML, and common config formats are indexed by default.</p>
-          <div id="message" role="status" aria-live="polite" hidden></div>
-          <div id="root-list" class="root-list"></div>
-          <div class="syntax-card"><h3>Query syntax</h3><dl><dt>ext:md,txt</dt><dd>file types</dd><dt>path:docs</dt><dd>path contains</dd><dt>root:notes</dt><dd>indexed root</dd><dt>-draft</dt><dd>exclude term</dd></dl></div>
+      <div id="message" role="status" aria-live="polite" hidden></div>
+      <section class="stats">
+        <article><strong id="stat-exchanges">0</strong><span>captured exchanges</span></article>
+        <article><strong id="stat-routes">0</strong><span>active mock routes</span></article>
+        <article><strong>1 MiB</strong><span>bounded request bodies</span></article>
+        <article><strong>Local</strong><span>data destination</span></article>
+      </section>
+      <section class="workbench">
+        <aside class="traffic panel">
+          <div class="panel-head"><div><p class="eyebrow">TRAFFIC</p><h2 id="history-count">0 exchanges</h2></div><button id="clear-button" class="ghost danger">Clear</button></div>
+          <div class="filters"><select id="method-filter"><option value="">Any method</option><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select><select id="status-filter"><option value="">Any status</option><option value="2xx">2xx</option><option value="4xx">4xx</option><option value="5xx">5xx</option></select><input id="path-filter" placeholder="Path contains…"><button id="filter-button">Apply</button></div>
+          <div id="traffic-list" class="traffic-list"><div class="empty"><strong>No requests captured</strong><span>Send an HTTP request to this server.</span></div></div>
         </aside>
-        <section class="results-panel">
-          <div class="result-heading"><div><p class="eyebrow">RESULTS</p><h2 id="result-count">Ready</h2></div><p>Filename matches receive the strongest ranking boost.</p></div>
-          <div id="results" class="results" aria-live="polite"><div class="empty-results"><div>⌕</div><h2>Search everything you indexed</h2><p>Type a filename, phrase, or content keyword.</p></div></div>
+        <section class="inspector panel">
+          <input id="selected-exchange" type="hidden">
+          <div id="exchange-empty" class="empty large"><div>↻</div><strong>Select a captured request</strong><span>Request and response details will appear here.</span></div>
+          <div id="exchange-detail" hidden>
+            <div class="request-title"><span id="detail-method" class="verb">GET</span><code id="detail-path">/</code><span id="detail-status" class="status neutral">0</span></div>
+            <div class="chips"><span>mode <b id="detail-mode">capture</b></span><span>route <b id="detail-route">unmatched</b></span></div>
+            <div class="replay-bar"><input id="replay-target" placeholder="http://localhost:3000/webhooks"><button id="replay-button">Replay &amp; compare</button><button id="curl-button" class="ghost">Copy cURL</button></div>
+            <div class="message-grid">
+              <article><h3>Request headers</h3><div id="request-headers"></div><h3>Request body</h3><pre id="request-body"></pre></article>
+              <article><h3>Response headers</h3><div id="response-headers"></div><h3>Response body</h3><pre id="response-body"></pre></article>
+            </div>
+            <article id="diff-panel" class="diff-panel" hidden><h3>Replay difference</h3><pre id="diff-output"></pre></article>
+          </div>
         </section>
       </section>
-      <section class="stats" aria-label="Index statistics">
-        <article><span id="stat-documents">0</span><small>documents</small></article>
-        <article><span id="stat-terms">0</span><small>unique terms</small></article>
-        <article><span id="stat-tokens">0</span><small>content tokens</small></article>
-        <article><span id="stat-roots">0</span><small>indexed roots</small></article>
+      <section class="routes panel">
+        <div class="panel-head"><div><p class="eyebrow">DETERMINISTIC MOCKS</p><h2>Routes</h2></div><button id="sample-route-button" class="ghost">Load sample</button></div>
+        <div class="route-layout"><div id="route-list" class="route-list"></div><div class="editor"><label for="route-json">Route JSON</label><textarea id="route-json" spellcheck="false"></textarea><button id="save-route-button">Validate &amp; save route</button></div></div>
       </section>
     </main>
-    <footer><span>MoonSeek 0.1.0</span><span>Index locally · search instantly · powered by MoonBit</span></footer>
+    <footer><span>MoonReplay 0.1.0</span><span>Capture · mock · replay · compare · powered by MoonBit</span></footer>
   </body>
 </html>
