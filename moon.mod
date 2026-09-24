@@ -1,4 +1,4 @@
-name = "moonseek/core"
+name = "moonreplay/core"
 
 version = "0.1.0"
 
@@ -10,8 +10,8 @@ readme = "README.md"
 
 license = "MIT"
 
-keywords = [ "search", "index", "filesystem", "full-text" ]
+keywords = [ "http", "webhook", "mock", "replay", "testing" ]
 
-description = "Fast local filename and full-text search powered by MoonBit"
+description = "Local HTTP capture, mock, replay, and response-diff workbench powered by MoonBit"
 
 preferred_target = "native"
