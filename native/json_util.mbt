@@ -34,20 +34,6 @@ fn json_int64_or(value : Json, key : String, fallback : Int64) -> Int64 {
 }
 
 ///|
-fn json_strings(value : Json, key : String) -> Array[String] {
-  match json_field(value, key) {
-    Array(values) =>
-      values.filter_map(item => {
-        match item {
-          String(text) => Some(text)
-          _ => None
-        }
-      })
-    _ => []
-  }
-}
-
-///|
 fn json_array(value : Json, key : String) -> Array[Json] {
   match json_field(value, key) {
     Array(values) => values

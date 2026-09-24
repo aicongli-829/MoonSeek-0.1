@@ -1,0 +1,38 @@
+{
+  "id": "order-webhook",
+  "name": "Order paid webhook",
+  "enabled": true,
+  "priority": 10,
+  "match": {
+    "methods": ["POST"],
+    "path": "/hooks/orders/{orderId}",
+    "pathMode": "template",
+    "headers": [
+      {
+        "name": "content-type",
+        "operator": "contains-ignore-case",
+        "value": "application/json"
+      }
+    ],
+    "query": [],
+    "body": {
+      "mode": "json-subset",
+      "value": "{\"event\":\"order.paid\"}"
+    }
+  },
+  "response": {
+    "status": 202,
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-MoonReplay-Route",
+        "value": "order-webhook"
+      }
+    ],
+    "body": "{\"accepted\":true,\"orderId\":\"{{path.orderId}}\"}",
+    "delayMs": 0
+  }
+}

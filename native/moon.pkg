@@ -1,15 +1,12 @@
 import {
-  "moonseek/core",
+  "moonreplay/core",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/async/fs",
   "moonbitlang/async/http",
   "moonbitlang/async/socket",
+  "moonbitlang/async",
 }
 
 supported_targets = "+native"
-
-import {
-  "moonbitlang/async",
-} for "test"

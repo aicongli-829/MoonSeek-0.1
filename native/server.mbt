@@ -5,13 +5,18 @@ async fn send_content(
   reason : String,
   content_type : String,
   content : String,
+  extra? : @http.Headers = Map([]),
 ) -> Unit {
-  connection.send_response(status, reason, extra_headers={
+  let headers : @http.Headers = {
     "Content-Type": content_type,
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
     "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-  })
+  }
+  for name, value in extra {
+    headers[name] = value
+  }
+  connection.send_response(status, reason, extra_headers=headers)
   connection.write(content)
   connection.end_response()
 }

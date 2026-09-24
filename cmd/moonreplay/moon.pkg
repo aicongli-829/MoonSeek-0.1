@@ -1,5 +1,5 @@
 import {
-  "moonseek/core/native",
+  "moonreplay/core/native",
   "moonbitlang/core/env",
   "moonbitlang/async",
 }
