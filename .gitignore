@@ -3,7 +3,7 @@
 _build/
 target/
 node_modules/
-.moonseek/
+.moonreplay/
 .scratch/
 .private/
 dist/

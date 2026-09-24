@@ -1,4 +1,4 @@
-name: Check MoonSeek
+name: Check MoonReplay
 
 on:
   push:
@@ -23,12 +23,13 @@ jobs:
         run: |
           moon fmt --check
           moon check --target js --deny-warn
-          moon test --target js
+          moon test --target js --deny-warn
+          moon build webui --target js --release
       - name: Check Native target and tests
         run: |
           moon check --target native --deny-warn
-          moon test --target native
-          moon build cmd/moonseek --target native --release
+          moon test --target native --deny-warn
+          moon build cmd/moonreplay --target native --release
       - name: Verify source-size target
         run: |
           lines=$(git ls-files '*.mbt' | xargs cat | wc -l)

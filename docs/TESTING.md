@@ -1,35 +1,51 @@
 # Testing
 
-## Automated checks
+MoonReplay uses strict cross-target checks and behavior-oriented tests.
+
+## Full verification
 
 ```text
 moon fmt --check
 moon check --target js --deny-warn
-moon test --target js
+moon test --target js --deny-warn
 moon check --target native --deny-warn
-moon test --target native
-moon build cmd/moonseek --target native --release
+moon test --target native --deny-warn
+moon build cmd/moonreplay --target native --release
 ```
 
-Core tests cover tokenization, query parsing, categories, byte ranges, fuzzy scoring, ranking, phrase and exclusion behavior, facets, suggestions, formatting, and malformed index detection.
+## Portable core coverage
 
-Native tests create real temporary directories and cover filename and content indexing, binary metadata indexing, incremental reuse, combined filters, multiple roots, root removal, `.moonseekignore`, persisted diagnostics, and suggestions. Temporary data is removed after each test.
+The 26 core tests cover:
 
-## Manual smoke test
+- target, path, query, and header normalization;
+- percent decoding and dot-segment handling;
+- wildcard and template paths;
+- method, header, query, text-body, exact-JSON, and JSON-subset matching;
+- priority and specificity route selection;
+- path and JSON-body response templates;
+- default and custom sensitive-data redaction;
+- nested JSON, text, status, and header diffs;
+- volatile-header defaults;
+- history predicates, order, and pagination;
+- workspace diagnostics;
+- cURL generation.
 
-Create a disposable folder containing a text file, a source file, and a small image. Then run:
+## Native integration coverage
 
-```text
-moon run --target native cmd/moonseek -- index add ./smoke
-moon run --target native cmd/moonseek -- status
-moon run --target native cmd/moonseek -- search "sample"
-moon run --target native cmd/moonseek -- search "type:image"
-moon run --target native cmd/moonseek -- doctor
-moon run --target native cmd/moonseek -- serve
-```
+The 10 Native tests cover:
 
-Index the folder a second time and confirm that unchanged files appear in the `reused` count. Open the printed local URL and verify keyboard focus, live search, filters, path copying, root removal, and status refresh.
+- workspace initialization and explicit replacement;
+- create/replace route semantics;
+- rejection of invalid routes without damaging healthy state;
+- route removal;
+- monotonic history sequences;
+- bounded retention;
+- persisted history filtering;
+- lookup and clear operations;
+- an in-process HTTP server/client round trip with method, header, body, status, and response header assertions.
 
-## Reporting failures
+Temporary directories are removed on both success and failure. Network tests bind to an ephemeral loopback port and do not access the public internet.
 
-Include the operating system, MoonBit version, command, sanitized directory layout, expected result, and actual JSON response. Do not attach the real `.moonseek/index.json` database when it contains private filenames or excerpts.
+## CI
+
+GitHub Actions installs the official toolchain, updates Mooncakes dependencies, performs strict JavaScript and Native checks, runs both test suites, builds the release executable, and verifies at least 4,000 tracked lines of hand-written MoonBit source.

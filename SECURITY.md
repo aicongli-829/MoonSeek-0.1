@@ -1,11 +1,29 @@
-# Security policy
+# Security
 
-Security fixes apply to the latest commit on `main` during pre-1.0 development.
+## Supported version
 
-MoonSeek reads only roots explicitly selected by the user. It does not modify indexed source files. The database is written atomically under the configured database path. Symbolic links, reserved state directories, version-control metadata, dependencies, and build output are skipped.
+Security fixes target the latest `main` branch until the first tagged release.
 
-The optional web server binds only to `127.0.0.1`. It validates `Host` and `Origin`, requires a random session token for POST requests, limits request size, and serves assets with a restrictive content security policy.
+## Local trust model
 
-The index contains filenames, absolute root paths, metadata, token counts, and short text excerpts. Treat it as private user data. Do not publish a real index in a bug report.
+MoonReplay is a local developer tool. The server binds to `127.0.0.1`. Administrative writes require a random session token and validate browser `Host` and `Origin` values.
 
-Use GitHub Security Advisories for private vulnerability reports. Include a minimal reproduction with synthetic files, the operating system, MoonBit version, expected behavior, and observed behavior. Remove personal paths, file contents, tokens, and the index database.
+Capture endpoints intentionally accept untrusted HTTP input. Bodies are bounded to 1 MiB. Mock delays are bounded to 30 seconds. History retention is bounded.
+
+## Sensitive data
+
+Default redaction covers authorization headers, proxy authorization, cookies, common API-key headers, token fields, passwords, client secrets, and payment-card field names. Custom names can be added in workspace settings.
+
+Redaction is a defense against common accidental persistence. It cannot recognize every business-specific secret. Inspect captured data before committing, sharing, or attaching it to an issue.
+
+Never commit `.moonreplay/history.json`. The repository ignore rules exclude local MoonReplay state.
+
+## Replay safety
+
+Replay only occurs after an explicit CLI or web-console action. A replay can trigger real side effects at its target. Use development or staging endpoints unless you intentionally want the production operation.
+
+Stored requests are sanitized. Authentication values removed during capture are not recreated during replay.
+
+## Reporting
+
+Open a private GitHub security advisory for vulnerabilities. Include affected commit, operating system, reproduction steps, and impact. Do not include live credentials or unredacted request captures.

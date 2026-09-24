@@ -1,25 +1,78 @@
 # Architecture
 
-MoonSeek separates deterministic search logic from operating-system access.
+## Packages
 
-## Portable core
+### `moonreplay/core`
 
-The root `moonseek/core` package owns mixed-language tokenization, query parsing, file categories, size ranges, inverted-index construction, BM25-style ranking, filename fuzzy matching, snippets, facets, suggestions, and index diagnostics. Its public boundaries accept and return JSON so the same core can be called from Native, JavaScript, browser, editor, or future MoonBit applications.
+The root package is deterministic and portable. It owns request normalization, route matching, response templates, redaction, response comparison, history predicates, cURL export, and workspace validation.
 
-The index stores a document table and a sorted term table. Each posting records content, filename, and path frequencies separately. Ranking weights filenames most strongly, then paths, then content. Document length normalization prevents long files from dominating. Equal scores use path order for deterministic output.
+Public boundary functions accept and return JSON strings. This makes the same core callable from Native code, the generated JavaScript module, test fixtures, and future integrations without duplicating models.
 
-## Native adapter
+### `moonreplay/core/native`
 
-`moonseek/core/native` owns filesystem scanning, metadata collection, ignore rules, atomic persistence, multiple-root updates, CLI dispatch, and the local HTTP service.
+The Native package owns side effects:
 
-On an update, the scanner compares each path's size and modification value with the previous document table. Matching documents reuse persisted term counts without reopening file contents. Changed text files are retokenized. Non-text files still contribute filename and path tokens.
+- atomic workspace and history files;
+- the loopback HTTP capture/mock server;
+- outbound replay requests;
+- administrative API endpoints;
+- CLI commands.
 
-The database is written to a unique temporary file with full synchronization, then renamed over the previous index. A failed write leaves the previous complete index available.
+### `cmd/moonreplay`
 
-## Local service
+The executable delegates to the Native CLI adapter. It contains no business rules.
 
-The service binds to loopback only. The initial session response supplies a random token. POST requests require that token and validate `Host` and `Origin`. Static assets use a restrictive content security policy. The browser receives search results and selected paths, but it cannot enumerate the filesystem directly.
+### `webui`
 
-## Limits
+The browser executable renders traffic, exchange details, routes, and response diffs. Its FFI surface contains only browser primitives.
 
-Format version 1 is a single JSON index intended for personal collections up to 100,000 files. Updates scan configured roots and reuse unchanged documents; a persistent filesystem watcher and segmented on-disk postings are planned for larger collections. Content extraction from binary office and PDF formats is outside version 0.1; those files remain searchable by filename and path.
+## Request flow
+
+1. The Native server accepts a request on `127.0.0.1`.
+2. The body is rejected if it exceeds the configured hard limit.
+3. The portable core normalizes method, target, path, query, and headers.
+4. Enabled routes are evaluated. Priority wins first; match specificity breaks ties.
+5. A matching route renders its response template. An unmatched request receives a diagnostic 404.
+6. Request and response pass through the redaction policy.
+7. The sanitized exchange is appended through an atomic history replacement.
+8. The raw in-memory mock response is sent to the caller.
+
+Redaction happens before persistence. The response sent to the caller is not changed by redaction.
+
+## Replay flow
+
+1. The user selects a sanitized stored exchange and supplies a target URL.
+2. MoonReplay removes hop-by-hop and connection-specific captured headers.
+3. The Native client sends the method, remaining headers, and body.
+4. The client collects status, headers, body, and elapsed milliseconds.
+5. The portable diff engine compares the live response with the recorded response.
+6. The CLI or web console presents both the response and structured differences.
+
+## Route precedence
+
+Every candidate receives a match score. Explicit methods, literal path segments, body conditions, and metadata predicates increase specificity. Selection compares:
+
+1. greater numeric `priority`;
+2. greater specificity score;
+3. earlier route order when both are equal.
+
+This makes emergency overrides possible while keeping normal fixtures deterministic.
+
+## Persistence
+
+`workspace.json` stores settings and route fixtures. `history.json` stores a bounded exchange array and the next monotonic sequence. Writes use a unique temporary file, request full sync, and atomically replace the destination.
+
+The current format version is `1`. Unknown workspace versions fail validation instead of being interpreted loosely.
+
+## Trust boundaries
+
+- Capture traffic is untrusted and size-bounded.
+- Route files are untrusted and validated before replacement.
+- Administrative POST endpoints require a random session token plus local `Host` and `Origin` checks.
+- The server listens only on loopback.
+- Replay targets are explicit user input. MoonReplay never replays automatically.
+- Stored captures are sanitized, but users must still inspect data before sharing it.
+
+## Deliberate limits
+
+Version 0.1 supports HTTP/1.1 behavior exposed by the MoonBit async HTTP package. It is a local development tool, not a TLS terminator, transparent system proxy, tunnel service, traffic sniffer, or production gateway.

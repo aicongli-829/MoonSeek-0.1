@@ -1,25 +1,32 @@
 # Roadmap
 
-## 0.1 · Search core
+## 0.1 — hackathon release
 
-- [x] All-file filename and path indexing.
-- [x] Text and source content indexing.
-- [x] Mixed English, numeric, and CJK tokenization.
-- [x] Incremental reuse of unchanged documents.
-- [x] Ranked search, fuzzy filenames, filters, facets, and suggestions.
-- [x] Multiple roots and `.moonseekignore` support.
-- [x] Native CLI, loopback web interface, and index diagnostics.
+- local request capture;
+- deterministic mock routes;
+- request and response redaction;
+- bounded atomic history;
+- replay to explicit HTTP/HTTPS targets;
+- structural response comparison;
+- cURL export;
+- Native CLI and local MoonBit web console;
+- strict Native and JavaScript CI.
 
-## 0.2 · Faster updates
+## 0.2
 
-- [ ] Filesystem watcher with debounced update batches.
-- [ ] Deleted-file tombstones without a full root scan.
-- [ ] Configurable indexing profiles per root.
-- [ ] Search latency and index throughput benchmark suite.
+- import and export HTTP Archive (`.har`) fixtures;
+- optional JSON Schema body assertions;
+- route groups and reusable response fragments;
+- configurable diff ignore paths;
+- streaming event updates in the web console;
+- fixture-oriented CI command with process exit codes.
 
-## 0.3 · Rich content
+## 0.3
 
-- [ ] Pluggable content extractors for PDF and office documents.
-- [ ] Optional image metadata and OCR adapters.
-- [ ] Segmented binary index for collections beyond 100,000 files.
-- [ ] Editor and launcher integrations using the portable JSON API.
+- OpenAPI example-to-route generation;
+- record-forward mode with an explicit upstream allowlist;
+- request sequence assertions;
+- latency and failure profiles;
+- published `moonreplay/core` and `moonreplay/native` Mooncakes packages.
+
+Production proxying, TLS interception, system-wide packet capture, and public tunnel hosting are outside the intended scope.

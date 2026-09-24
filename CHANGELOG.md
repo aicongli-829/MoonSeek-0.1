@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.1.0 · 2026-09-23
+## 0.1.0 — 2026-09-24
 
-- Added a MoonBit local filename and full-text search engine.
-- Added deterministic inverted indexing and BM25-style ranking.
-- Added mixed CJK/English tokenization and fuzzy filename matching.
-- Added extension, category, path, root, size, modification, phrase, and exclusion filters.
-- Added incremental multi-root indexing for all regular filenames and recognized text contents.
-- Added `.moonseekignore`, search suggestions, facets, snippets, and structural index diagnostics.
-- Added a Native CLI and token-protected loopback web interface.
-- Added Native and JavaScript checks plus real filesystem integration tests.
+- rebuilt the repository as MoonReplay;
+- added local HTTP and webhook capture;
+- added deterministic mock route matching and response templates;
+- added recursive sensitive-data redaction;
+- added bounded atomic workspace and history persistence;
+- added Native HTTP replay and semantic response comparison;
+- added cURL export, history filters, workspace validation, and diagnostics;
+- added a MoonBit local web console;
+- added 26 portable tests and 10 Native integration tests;
+- removed the current-tree MoonSeek search implementation to eliminate overlap with search and retrieval projects.
